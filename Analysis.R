@@ -153,7 +153,7 @@ toj_data_for_stan = list(
 
 library(rstan)
 toj_model = stan_model(
-	file = './BayesMay4th/toj.stan'
+	file = './EndogenousVisualPriorEntry-BayesianHierarchicalModel/toj.stan'
 )
 
 toj_post = sampling(
@@ -205,7 +205,7 @@ color_data_for_stan = list(
 	, y = pi+degree_to_rad(color_trials$color_diff)  # want from 0 to 360 instead of -180 to 180
 )
 
-color_model = stan_model(file='./BayesMay4th/color.stan')
+color_model = stan_model(file='./EndogenousVisualPriorEntry-BayesianHierarchicalModel/color.stan')
 color_post <- sampling(
 	object = color_model
 	, data = color_data_for_stan
