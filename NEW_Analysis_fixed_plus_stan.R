@@ -30,7 +30,7 @@ a = ldply(
   .data = list.files(
 	  	pattern = ".txt"
   		, full.names = T
-  		, path = './Data_alpha'
+  		, path = './Baseball/baseballtojdata/Data_alpha'
   	)
   , .fun = check_before_read
   , .progress = 'text'
@@ -41,7 +41,7 @@ b = ldply(
 	.data = list.files(
 		pattern = ".txt"
 		, full.names = T
-		, path = './Data_delta'
+		, path = './Baseball/baseballtojdata/Data_delta'
 	)
 	, .fun = check_before_read
 	, .progress = 'text'
