@@ -1,5 +1,7 @@
 # EndogenousVisualPriorEntry-BayesianHierarchicalModel
-Stan and R code for bayesian hierarchical model analysis of temporal order judgement and color wheel data in repeated measures experiment:
+Stan and R code for bayesian hierarchical model analysis of temporal order judgement and color wheel data in pair of repeated measures experiments.
+
+Two experiments are run, the second of which has 'FollowUp' in the name of both its '.stan' files and its single '.R' file. Despite this dichotomization, the analyses for the data of both experiments are broadly identical. Futhermore, the procedure of both experiments can be summarized as follows: 
 
 On each trial, human participants each watch pairs of stimuli, one on each side (left/right) of the screen, appear in sequence. The time interval between the differential onsets of the stimlui takes one of five values on a given trial. The order of the stimuli onsets is randomized across trials, but each order is presented an equal amount times in total. 
 
