@@ -1,3 +1,7 @@
+# set direcotry 
+# TEST 
+setwd("~/Documents/TOJ")
+
 #### Libraries ####
 library(plyr)
 library(ggplot2)
@@ -95,7 +99,6 @@ a$toj_response = as.factor(a$toj_response)
 #a$color_response = as.numeric(a$color_response)
 a$color_diff = as.numeric(a$color_diff)
 a$response_time = as.numeric(a$response_time)
-
 
 
 
