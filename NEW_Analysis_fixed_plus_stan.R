@@ -1,5 +1,4 @@
 # set directory 
-# TEST 
 setwd("~/Documents/TOJ")
 
 #### Libraries ####
