@@ -1,6 +1,3 @@
-# set directory 
-setwd("/Volumes/Seagate Backup Plus Drive/BaseballTOJ")
-
 #### Libraries ####
 library(plyr)
 library(ggplot2)
@@ -33,7 +30,7 @@ a = ldply(
   .data = list.files(
 	  	pattern = ".txt"
   		, full.names = T
-  		, path = './alpha_toj_temp/ExpAssets'
+  		, path = './Data_alpha'
   	)
   , .fun = check_before_read
   , .progress = 'text'
@@ -44,7 +41,7 @@ b = ldply(
 	.data = list.files(
 		pattern = ".txt"
 		, full.names = T
-		, path = './delta_toj_temp'
+		, path = './Data_delta'
 	)
 	, .fun = check_before_read
 	, .progress = 'text'
@@ -159,8 +156,9 @@ toj_model = stan_model(
 toj_post = sampling(
 	object = toj_model
 	, data = toj_data_for_stan
-	, iter = 1e2
-	, chains = 1
+	, iter = 1e4
+	, chains = 8
+	, cores = 8
 	, pars = 'trial_prob'
 	, include = FALSE
 )
@@ -205,13 +203,15 @@ color_data_for_stan = list(
 	, y = pi+degree_to_rad(color_trials$color_diff)  # want from 0 to 360 instead of -180 to 180
 )
 
-color_model = stan_model(file='./EndogenousVisualPriorEntry-BayesianHierarchicalModel/color.stan')
+color_model = stan_model(
+  file='./EndogenousVisualPriorEntry-BayesianHierarchicalModel/color.stan'
+  )
 color_post <- sampling(
 	object = color_model
 	, data = color_data_for_stan
-	, iter = 1e2
-	, chains = 1
-	, cores = 1
+	, iter = 1e4
+	, chains = 8
+	, cores = 8
 	, pars = c( 
 		'logitRhoMean'
 		,'logKappaMean'
