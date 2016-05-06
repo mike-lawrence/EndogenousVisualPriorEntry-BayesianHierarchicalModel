@@ -1,5 +1,5 @@
 # set directory 
-setwd("~/Documents/TOJ")
+setwd("/Volumes/Seagate Backup Plus Drive/BaseballTOJ")
 
 #### Libraries ####
 library(plyr)
@@ -33,7 +33,7 @@ a = ldply(
   .data = list.files(
 	  	pattern = ".txt"
   		, full.names = T
-  		, path = './Baseball/baseballtojdata/Data_alpha'
+  		, path = './alpha_toj_temp/ExpAssets'
   	)
   , .fun = check_before_read
   , .progress = 'text'
@@ -44,7 +44,7 @@ b = ldply(
 	.data = list.files(
 		pattern = ".txt"
 		, full.names = T
-		, path = './Baseball/baseballtojdata/Data_delta'
+		, path = './delta_toj_temp'
 	)
 	, .fun = check_before_read
 	, .progress = 'text'
