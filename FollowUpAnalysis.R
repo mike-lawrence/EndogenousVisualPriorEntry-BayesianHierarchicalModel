@@ -1,6 +1,3 @@
-# set directory 
-setwd("~/Documents/TOJ")
-
 #### Libraries ####
 library(plyr)
 library(ggplot2)
@@ -34,13 +31,16 @@ a = ldply(
   .data = list.files(
 	  	pattern = ".txt"
   		, full.names = T
-  		, path = './Follow-Up/Analysis'
+  		, path = '.'
   	)
   , .fun = check_before_read
   , .progress = 'text'
 )
 names(a)[1] = "id"
-	
+
+# TEST DATA
+
+
 # b = ldply(
 # 	.data = list.files(
 # 		pattern = ".txt"
