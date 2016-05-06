@@ -64,8 +64,6 @@ length(unique(a$id))
 
 
 
-
-
 #toss baseball-naive Ss
 a = a[substr(a$id,1,8)!='alpha 12',]
 a = a[substr(a$id,1,7)!='delta 7',]
@@ -134,16 +132,57 @@ toj_trials = a
 toj_trials = toj_trials[!is.na(toj_trials$toj_response), ]
 toj_trials$safe = FALSE
 toj_trials$safe[toj_trials$toj_response == "safe"] = TRUE
+
+### SOAs 
 toj_trials$soa2 = toj_trials$soa
+# correct soas 
+toj_trials[toj_trials$soa2 == "15",]$soa2 = 17
+toj_trials[toj_trials$soa2 == "45",]$soa2 = 50
+toj_trials[toj_trials$soa2 == "90",]$soa2 = 83
+toj_trials[toj_trials$soa2 == "135",]$soa2 = 133
+toj_trials[toj_trials$soa2 == "240",]$soa2 = 237
 # Negative SOAs means Ball first 
 toj_trials$soa2[toj_trials$first_arrival == "ball"] = -toj_trials$soa2[toj_trials$first_arrival == "ball"]
 
+### Graph Psychometric Functions 
+toj_means_by_id_by_condition = ddply(
+  .data = toj_trials
+  , .variables = .(id,base_probe_dist, soa2)
+  , .fun = function(x){
+    to_return = data.frame(
+      value = mean(x$safe)
+    )
+    return(to_return)
+  }
+)
+toj_means_by_id_by_condition$soa2 = as.numeric(as.character(toj_means_by_id_by_condition$soa2))
 
+ggplot(
+  data = toj_means_by_id_by_condition
+  , mapping = aes(
+    x = soa2
+    , y =  value
+    , shape = base_probe_dist
+    , linetype = base_probe_dist
+    , group = base_probe_dist
+  )
+)+
+  facet_wrap(
+    ~ id
+  )+
+  geom_smooth(
+    method = "glm"
+    , method.args = list(family = "binomial")
+    , formula = y ~ splines::ns(x,3)
+    , se = FALSE
+  )
+
+### Stan 
 toj_data_for_stan = list(
 	N = length(unique(toj_trials$id))
 	, L = nrow(toj_trials)
 	, y = as.numeric(toj_trials$safe)
-	, x = (as.numeric(toj_trials$soa2))/240  # we normalize soas, and therefore pss
+	, x = (as.numeric(toj_trials$soa2))/237  # we normalize soas, and therefore pss
 	, id = as.numeric(factor(toj_trials$id))
 	, condition = ifelse(toj_trials$glove_probe_dist==.8,-1,1)
 )

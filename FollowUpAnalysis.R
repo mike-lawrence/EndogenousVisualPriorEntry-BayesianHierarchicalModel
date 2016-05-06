@@ -39,7 +39,7 @@ a = ldply(
 names(a)[1] = "id"
 
 # TEST DATA
-
+a = a[a$id == "f2b6cbb094260e5cd95492dbe567f625a48d029c",] 
 
 # b = ldply(
 # 	.data = list.files(
@@ -62,7 +62,7 @@ length(checksums)
 temp = data.frame(table(id=a$id))
 
 #discard those with too few trials
-keep = temp$id[temp$Freq==588]  # 36 * 3 + 240 * 2 = 588 
+keep = temp$id[temp$Freq==600]  # 40 * 3 + 240 * 2 = 600
 a = a[a$id %in% keep,]
 
 length(unique(a$id))
@@ -82,6 +82,9 @@ a$trial_type = as.factor(a$trial_type)
 a$probe_loc = as.factor(a$probe_loc)
 a$t1_loc = as.factor(a$t1_loc)
 a$t1_type = as.factor(a$t1_type)
+a$probe_initial_bias = as.factor(a$probe_initial_bias)
+a$block_bias = as.factor(a$block_bias)  
+a$toj_judgement = as.factor(a$toj_judgement)
 
 #As numeric
 #a$probe_color = as.numeric(a$probe_color)
@@ -90,10 +93,8 @@ a$probe_angle = as.numeric(a$probe_angle)
 a$rotation = as.numeric(a$rotation)
 a$probe_judgement = as.numeric(a$probe_judgement)  # angle of color judgement (0 to 360)
 a$probe_rt = as.numeric(a$probe_rt)
-
-
-# create color diff column 
-a$color_diff = as.numeric(a$probe_angle - a$probe_judgement)
+a$p_minus_j = as.numeric(a$p_minus_j)
+a$toj_rt = as.numeric(a$toj_rt)
 
 
 
@@ -101,51 +102,76 @@ a$color_diff = as.numeric(a$probe_angle - a$probe_judgement)
 summary(a)
 
 # double check 20/80
-table(a$probe_loc, a$block_num)  # don't have a block bias factor yet  
-aggregate(trial_num ~ block_num, data = a, FUN = length)
-table(a$t1_loc, a$block_num)
-table(a$t1_type, a$block_num)
+table(a$probe_loc, a$block_num)    
+print("ERROR: probe biases are correct (4:1) for practice blocks (2,4), but are incorrect (~3:1) for experimental blocks")
+# continue 
+aggregate(trial_num ~ block_num, data = a, FUN = length) # good
+table(a$t1_loc, a$block_num) # good
+table(a$t1_type, a$block_num) # good
 
-toss = NULL
-for(i in unique(a$id)){
-	temp = with(
-		a[a$id==i,]
-		,data.frame(table(
-			probe_location, glove_probe_dist
-		))
-	)
-	if(
-		(!all(temp$Freq==c(64,16,0,0,16,64,0,0))) &
-		(!all(temp$Freq==c(0,0,64,16,0,0,16,64)))
-	){
-		toss = c(toss,i)
-		print(i)
-		print(temp)
-	}
-}
-
-a = a[!(a$id %in% toss),]
-
-length(unique(a$id))
-
+# get experimental blocks (3, 5)
+a_exp = a[a$block_num %in% c(3,5),]
 
 
 
 #### TOJ ####
-toj_trials = a
-toj_trials = toj_trials[!is.na(toj_trials$toj_response), ]
-toj_trials$safe = FALSE
-toj_trials$safe[toj_trials$toj_response == "safe"] = TRUE
+toj_trials = a_exp
+toj_trials = toj_trials[toj_trials$trial_type == "TARGET", ]
+toj_trials$left_TF = FALSE
+toj_trials$left_TF[toj_trials$toj_judgement == "LEFT"] = TRUE  
+print("ERROR: There is no toj judement 'side' column")
+
+### SOAs 
 toj_trials$soa2 = toj_trials$soa
-# Negative SOAs means Ball first 
-toj_trials$soa2[toj_trials$first_arrival == "ball"] = -toj_trials$soa2[toj_trials$first_arrival == "ball"]
+# correct soas 
+toj_trials[toj_trials$soa2 == "15",]$soa2 = 17
+toj_trials[toj_trials$soa2 == "45",]$soa2 = 50
+toj_trials[toj_trials$soa2 == "90",]$soa2 = 83
+toj_trials[toj_trials$soa2 == "135",]$soa2 = 133
+toj_trials[toj_trials$soa2 == "240",]$soa2 = 237
+# Negative SOAs means LEFT first 
+toj_trials[toj_trials$t1_loc == "RIGHT",]$soa2 = -toj_trials[toj_trials$t1_loc == "RIGHT",]$soa2
+
+### Plot Psychometric Functions 
+toj_means_by_id_by_condition = ddply(
+  .data = toj_trials
+  , .variables = .(id,block_bias, soa2)
+  , .fun = function(x){
+    to_return = data.frame(
+      value = mean(x$left_TF)
+    )
+    return(to_return)
+  }
+)
+toj_means_by_id_by_condition$soa2 = as.numeric(as.character(toj_means_by_id_by_condition$soa2))
+
+ggplot(
+  data = toj_means_by_id_by_condition
+  , mapping = aes(
+    x = soa2
+    , y =  value
+    , shape = block_bias
+    , linetype = block_bias
+    , group = block_bias
+  )
+)+
+  facet_wrap(
+    ~ id
+  )+
+  geom_smooth(
+    method = "glm"
+    , method.args = list(family = "binomial")
+    , formula = y ~ splines::ns(x,3)
+    , se = FALSE
+  )
+
 
 
 toj_data_for_stan = list(
 	N = length(unique(toj_trials$id))
 	, L = nrow(toj_trials)
 	, y = as.numeric(toj_trials$safe)
-	, x = (as.numeric(toj_trials$soa2))/240  # we normalize soas, and therefore pss
+	, x = (as.numeric(toj_trials$soa2))/237  # we normalize soas, and therefore pss
 	, id = as.numeric(factor(toj_trials$id))
 	, condition = ifelse(toj_trials$glove_probe_dist==.8,-1,1)
 )
