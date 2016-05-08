@@ -6,3 +6,8 @@ color_post
 
 # visualize
 plot(color_post)
+
+# coda diagnostics
+# might not work for sampling() object
+
+
