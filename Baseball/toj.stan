@@ -53,7 +53,7 @@ transformed parameters{
 		}
 		for(this_obs in 1:L){
 			trial_pss[this_obs] <- pss_intercept_per_id[id[this_obs]] + pss_effect_per_id[id[this_obs]]*condition[L] ;
-			trial_logjnd[this_obs] <- logjnd_intercept_per_id[id[this_obs]] + logjnd_effect_per_id[id[this_obs]]*condition[L] ;
+			trial_logjnd[this_obs] <- logjnd_intercept_per_id[id[this_obs]] + logjnd_effect_per_id[id[this_obs]]*condition[this_obs] ;
 			trial_prob[this_obs] <- Phi_approx((x[this_obs]-trial_pss[this_obs])/exp(trial_logjnd[this_obs])) ;
 		}
 	}	
