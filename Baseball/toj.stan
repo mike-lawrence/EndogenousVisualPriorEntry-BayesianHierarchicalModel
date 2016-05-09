@@ -26,7 +26,7 @@ parameters{
 	// correlation
 	corr_matrix[4] cor ; 
 	//dummy variable for matt trick
-	vector[4] beta[N]; 
+	matrix[N,4] beta; 
 }
 transformed parameters{
 	real trial_prob[L] ;
@@ -67,9 +67,7 @@ model{
 
 	
 	#sample the betas from standard multivariate normal
-	for(this_id in 1:N){
-		beta[this_id] ~ multi_student_t(1,zeros,cor) ;
-	}
+	to_vector(beta) ~ multi_student_t(1,zeros,cor) ;
 	
 	y ~ bernoulli(trial_prob) ;
 	
