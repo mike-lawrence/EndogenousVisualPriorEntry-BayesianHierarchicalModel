@@ -138,9 +138,9 @@ toj_trials$soa2 = toj_trials$soa
 # correct soas 
 toj_trials[toj_trials$soa2 == "15",]$soa2 = 17
 toj_trials[toj_trials$soa2 == "45",]$soa2 = 50
-toj_trials[toj_trials$soa2 == "90",]$soa2 = 83
-toj_trials[toj_trials$soa2 == "135",]$soa2 = 133
-toj_trials[toj_trials$soa2 == "240",]$soa2 = 237
+toj_trials[toj_trials$soa2 == "90",]$soa2 = 100
+toj_trials[toj_trials$soa2 == "135",]$soa2 = 150
+toj_trials[toj_trials$soa2 == "240",]$soa2 = 250
 # Negative SOAs means Ball first 
 toj_trials$soa2[toj_trials$first_arrival == "ball"] = -toj_trials$soa2[toj_trials$first_arrival == "ball"]
 
@@ -182,7 +182,7 @@ toj_data_for_stan = list(
 	N = length(unique(toj_trials$id))
 	, L = nrow(toj_trials)
 	, y = as.numeric(toj_trials$safe)
-	, x = (as.numeric(toj_trials$soa2))/237  # we normalize soas, and therefore pss
+	, x = (as.numeric(toj_trials$soa2))/250  # we normalize soas, and therefore pss
 	, id = as.numeric(factor(toj_trials$id))
 	, condition = ifelse(toj_trials$glove_probe_dist==.8,-1,1)
 )
