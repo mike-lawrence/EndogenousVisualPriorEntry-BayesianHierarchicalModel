@@ -189,7 +189,7 @@ toj_data_for_stan = list(
 
 library(rstan)
 toj_model = stan_model(
-	file = './EndogenousVisualPriorEntry-BayesianHierarchicalModel/toj.stan'
+	file = './EndogenousVisualPriorEntry-BayesianHierarchicalModel/Baseball/toj.stan'
 )
 
 toj_post = sampling(
@@ -243,7 +243,7 @@ color_data_for_stan = list(
 )
 
 color_model = stan_model(
-  file='./EndogenousVisualPriorEntry-BayesianHierarchicalModel/color.stan'
+  file='./EndogenousVisualPriorEntry-BayesianHierarchicalModel/Baseball/color.stan'
   )
 color_post <- sampling(
 	object = color_model
