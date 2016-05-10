@@ -75,8 +75,8 @@ transformed parameters {
 			logKappa[n] <- logKappaMean + betas[n,2]*logKappaSD;
 			logitRhoEffect[n] <- logitRhoEffectMean + betas[n,3]*logitRhoEffectSD;
 			logKappaEffect[n] <- logKappaEffectMean + betas[n,4]*logKappaEffectSD;
-			rho[1,n] <- inv_logit( logitRho[n] - logitRhoEffect[n]/2 );
-			rho[2,n] <- inv_logit( logitRho[n] + logitRhoEffect[n]/2 );
+			rho[1,n] <- inv_logit( logitRho[n] - logitRhoEffect[n]/2 );  // unattended is 1, is minus
+			rho[2,n] <- inv_logit( logitRho[n] + logitRhoEffect[n]/2 );  // attended is 2, is plus
 			kappa[1,n] <- exp( logKappa[n] - logKappaEffect[n]/2 );
 			kappa[2,n] <- exp( logKappa[n] + logKappaEffect[n]/2 );
 			logRho[1,n] <- log(rho[1,n]);

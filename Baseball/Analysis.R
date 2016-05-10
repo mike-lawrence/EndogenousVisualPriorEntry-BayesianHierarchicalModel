@@ -238,7 +238,7 @@ color_data_for_stan = list(
 	N = length(unique(color_trials$id))
 	, L = nrow(color_trials)
 	, unit = as.numeric(factor(color_trials$id))
-	, condition = as.numeric(as.factor(color_trials$attended))
+	, condition = as.numeric(as.factor(color_trials$attended)) # TRUE is 2, FALSE is 1 
 	, y = pi+degree_to_rad(color_trials$color_diff)  # want from 0 to 360 instead of -180 to 180
 )
 
