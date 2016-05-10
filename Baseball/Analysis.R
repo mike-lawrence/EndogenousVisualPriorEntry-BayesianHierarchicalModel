@@ -181,10 +181,10 @@ ggplot(
 toj_data_for_stan = list(
 	N = length(unique(toj_trials$id))
 	, L = nrow(toj_trials)
-	, y = as.numeric(toj_trials$safe)
+	, y = as.numeric(toj_trials$safe)  
 	, x = (as.numeric(toj_trials$soa2))/250  # we normalize soas, and therefore pss
 	, id = as.numeric(factor(toj_trials$id))
-	, condition = ifelse(toj_trials$glove_probe_dist==.8,-1,1)
+	, condition = ifelse(toj_trials$glove_probe_dist==.8,-1,1)  # glove is -1 and base is +1
 )
 
 library(rstan)
