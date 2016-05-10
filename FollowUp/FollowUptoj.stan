@@ -52,8 +52,8 @@ transformed parameters{
 			logjnd_effect_per_id[this_id] <- beta[this_id,4]*population_logjnd_effect_sd + population_logjnd_effect_mean ;
 		}
 		for(this_obs in 1:L){
-			trial_pss[this_obs] <- pss_intercept_per_id[id[this_obs]] + pss_effect_per_id[id[this_obs]]*condition[L] ;
-			trial_logjnd[this_obs] <- logjnd_intercept_per_id[id[this_obs]] + logjnd_effect_per_id[id[this_obs]]*condition[L] ;
+			trial_pss[this_obs] <- pss_intercept_per_id[id[this_obs]] + pss_effect_per_id[id[this_obs]]*condition[this_obs] ;  // glove is -1, base is +1
+			trial_logjnd[this_obs] <- logjnd_intercept_per_id[id[this_obs]] + logjnd_effect_per_id[id[this_obs]]*condition[this_obs] ; // glove is -1, base is +1
 			trial_prob[this_obs] <- Phi_approx((x[this_obs]-trial_pss[this_obs])/exp(trial_logjnd[this_obs])) ;
 		}
 	}	
@@ -68,9 +68,8 @@ model{
 	
 	#sample the betas from standard multivariate normal
 	for(this_id in 1:N){
-		beta[this_id] ~ multi_student_t(1,zeros,cor) ;
+	  beta[this_id] ~ multi_student_t(1,zeros,cor) ;
 	}
-	
 	y ~ bernoulli(trial_prob) ;
 	
 }

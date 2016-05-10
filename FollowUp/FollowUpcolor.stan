@@ -17,16 +17,16 @@
 
 
 data {
-	int<lower=0> N;
-	int<lower=0> L;
-	int<lower=0> unit[L];
-	int<lower=1,upper=2> condition[L];
-	real<lower=0,upper=2*pi()> y[L];
+	int<lower=0> N;                       // Ghis: number of pariticpants 
+	int<lower=0> L;                       // Ghis: number of trials  
+	int<lower=0> unit[L];                 // Ghis: participant factor per trial 
+	int<lower=1,upper=2> condition[L];    // Ghis: attentional manipulation per trial
+	real<lower=0,upper=2*pi()> y[L];      // Ghis: color wheel differences per trial 
 }
 transformed data{
 	vector[4] zeros;
 	real neglog2pi;
-	neglog2pi <- -log(2.0 * pi()); #log-probability of uniform component (i.e. data invariant)
+	neglog2pi <- -log(2.0 * pi()); // log-probability of uniform component (i.e. data invariant)
 	for(i in 1:4){
 		zeros[i] <- 0 ;
 	}
@@ -75,8 +75,8 @@ transformed parameters {
 			logKappa[n] <- logKappaMean + betas[n,2]*logKappaSD;
 			logitRhoEffect[n] <- logitRhoEffectMean + betas[n,3]*logitRhoEffectSD;
 			logKappaEffect[n] <- logKappaEffectMean + betas[n,4]*logKappaEffectSD;
-			rho[1,n] <- inv_logit( logitRho[n] - logitRhoEffect[n]/2 );
-			rho[2,n] <- inv_logit( logitRho[n] + logitRhoEffect[n]/2 );
+			rho[1,n] <- inv_logit( logitRho[n] - logitRhoEffect[n]/2 );  // unattended is 1, is minus
+			rho[2,n] <- inv_logit( logitRho[n] + logitRhoEffect[n]/2 );  // attended is 2, is plus
 			kappa[1,n] <- exp( logKappa[n] - logKappaEffect[n]/2 );
 			kappa[2,n] <- exp( logKappa[n] + logKappaEffect[n]/2 );
 			logRho[1,n] <- log(rho[1,n]);
@@ -86,8 +86,8 @@ transformed parameters {
 		}
 		// compute trial-level parameters
 		for (i in 1:L){
-			p[i] <- log_sum_exp(
-				logRho[condition[i],unit[i]] + von_mises_log(y[i],pi(),kappa[condition[i],unit[i]])
+			p[i] <- log_sum_exp(  // Ghis: likelihood 
+				logRho[condition[i],unit[i]] + von_mises_log(y[i],pi(),kappa[condition[i],unit[i]])   
 				, log1mrho_neglog2pi[condition[i],unit[i]]
 			) ;
 		}

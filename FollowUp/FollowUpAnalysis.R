@@ -38,9 +38,6 @@ a = ldply(
 )
 names(a)[1] = "id"
 
-# TEST DATA
-a = a[a$id == "f2b6cbb094260e5cd95492dbe567f625a48d029c",] 
-
 # b = ldply(
 # 	.data = list.files(
 # 		pattern = ".txt"
@@ -61,9 +58,9 @@ length(checksums)
 #count trials per id
 temp = data.frame(table(id=a$id))
 
-#discard those with too few trials
-keep = temp$id[temp$Freq==600]  # 40 * 3 + 240 * 2 = 600
-a = a[a$id %in% keep,]
+# #discard those with too few trials
+# keep = temp$id[temp$Freq==600]  # 40 * 3 + 240 * 2 = 600
+# a = a[a$id %in% keep,]
 
 length(unique(a$id))
 
@@ -103,33 +100,55 @@ summary(a)
 
 # double check 20/80
 table(a$probe_loc, a$block_num)    
-print("ERROR: probe biases are correct (4:1) for practice blocks (2,4), but are incorrect (~3:1) for experimental blocks")
 # continue 
 aggregate(trial_num ~ block_num, data = a, FUN = length) # good
 table(a$t1_loc, a$block_num) # good
 table(a$t1_type, a$block_num) # good
 
-# get experimental blocks (3, 5)
-a_exp = a[a$block_num %in% c(3,5),]
-
+# # get experimental blocks (3, 5)
+# a_exp = a[a$block_num %in% c(3,5),]
+a_exp = a[a$block_num == 3, ]
 
 
 #### TOJ ####
 toj_trials = a_exp
 toj_trials = toj_trials[toj_trials$trial_type == "TARGET", ]
+toj_trials$toj_judgement = as.factor(as.character(toj_trials$toj_judgement))
+
+if ( unique(toj_trials$toj_judgement_type) == "first" ) {
+  
+  toj_trials$correct_judgement = toj_trials$t1_type == toj_trials$toj_judgement
+  toj_trials$toj_judgement_side = "NA"
+  toj_trials[toj_trials$correct_judgement,]$toj_judgement_side = as.character( toj_trials[toj_trials$correct_judgement,]$t1_loc )
+  toj_trials[!toj_trials$correct_judgement,]$toj_judgement_side = ifelse(toj_trials[!toj_trials$correct_judgement,]$t1_loc == "LEFT", "RIGHT", "LEFT")
+  toj_trials$toj_judgement_side = as.factor(toj_trials$toj_judgement_side)
+  
+} else if ( unique(toj_trials$toj_judgement_type) == "second" ) {
+  
+  toj_trials$correct_judgement = toj_trials$t1_type != toj_trials$toj_judgement
+  toj_trials$toj_judgement_side = "NA"
+  toj_trials[!toj_trials$correct_judgement,]$toj_judgement_side =  as.character( toj_trials[!toj_trials$correct_judgement,]$t1_loc )
+  toj_trials[toj_trials$correct_judgement,]$toj_judgement_side = ifelse(toj_trials[toj_trials$correct_judgement,]$t1_loc == "LEFT", "RIGHT", "LEFT")
+  toj_trials$toj_judgement_side = as.factor(toj_trials$toj_judgement_side)
+  
+} else {
+  print("What is the toj_judgement_type? It is not 'first' or 'second'.")
+}
+
+# looking left condition since we looked at 'safe' (not out) proportion and since that event occured on the left side
 toj_trials$left_TF = FALSE
-toj_trials$left_TF[toj_trials$toj_judgement == "LEFT"] = TRUE  
-print("ERROR: There is no toj judement 'side' column")
+toj_trials$left_TF[toj_trials$toj_judgement_side == "LEFT"] = TRUE  
+
 
 ### SOAs 
 toj_trials$soa2 = toj_trials$soa
 # correct soas 
 toj_trials[toj_trials$soa2 == "15",]$soa2 = 17
 toj_trials[toj_trials$soa2 == "45",]$soa2 = 50
-toj_trials[toj_trials$soa2 == "90",]$soa2 = 83
-toj_trials[toj_trials$soa2 == "135",]$soa2 = 133
-toj_trials[toj_trials$soa2 == "240",]$soa2 = 237
-# Negative SOAs means LEFT first 
+toj_trials[toj_trials$soa2 == "90",]$soa2 = 100
+toj_trials[toj_trials$soa2 == "135",]$soa2 = 150
+toj_trials[toj_trials$soa2 == "240",]$soa2 = 250
+# Negative SOAs means RIGHT first 
 toj_trials[toj_trials$t1_loc == "RIGHT",]$soa2 = -toj_trials[toj_trials$t1_loc == "RIGHT",]$soa2
 
 ### Plot Psychometric Functions 
@@ -170,15 +189,15 @@ ggplot(
 toj_data_for_stan = list(
 	N = length(unique(toj_trials$id))
 	, L = nrow(toj_trials)
-	, y = as.numeric(toj_trials$safe)
-	, x = (as.numeric(toj_trials$soa2))/237  # we normalize soas, and therefore pss
+	, y = as.numeric(toj_trials$left_TF)
+	, x = (as.numeric(toj_trials$soa2))/250  # we normalize soas, and therefore pss
 	, id = as.numeric(factor(toj_trials$id))
-	, condition = ifelse(toj_trials$glove_probe_dist==.8,-1,1)
+	, condition = ifelse(toj_trials$block_bias == "RIGHT",-1,1)
 )
 
 library(rstan)
 toj_model = stan_model(
-	file = './BayesMay4th/toj.stan'
+	file = './EndogenousVisualPriorEntry-BayesianHierarchicalModel/FollowUp/FollowUptoj.stan'
 )
 
 toj_post = sampling(
@@ -210,27 +229,25 @@ rad_to_degrees = function(x)
   return(x*180 / pi)
 }
 
-color_trials = a
-color_trials$probe_location[color_trials$probe_location == "[1088, 896]"] = "base"
-color_trials$probe_location[color_trials$probe_location == "[1328, 581]"] = "glove"
-color_trials = color_trials[!is.na(color_trials$color_diff), ]
-hist(color_trials$color_diff,br=100)
-color_trials[color_trials$color_diff > 180,]$color_diff = - (360 - color_trials[color_trials$color_diff > 180,]$color_diff)
-color_trials[color_trials$color_diff < (-180),]$color_diff = color_trials[color_trials$color_diff < (-180),]$color_diff + 360
-hist(color_trials$color_diff,br=100)
+color_trials = a_exp
+color_trials = color_trials[color_trials$trial_type == "PROBE", ]
+hist(color_trials$p_minus_j,br=100)
+color_trials[color_trials$p_minus_j > 180,]$p_minus_j = - (360 - color_trials[color_trials$p_minus_j > 180,]$p_minus_j)
+color_trials[color_trials$p_minus_j < (-180),]$p_minus_j = color_trials[color_trials$p_minus_j < (-180),]$p_minus_j + 360
+hist(color_trials$p_minus_j,br=100)
 
 color_trials$attended = FALSE
-color_trials$attended[ (color_trials$base_probe_dist == 0.8 & color_trials$probe_location == "base") | (color_trials$base_probe_dist == 0.2 & color_trials$probe_location == "glove")] = TRUE
+color_trials$attended[ (color_trials$block_bias == "LEFT" & color_trials$probe_loc == "LEFT") | (color_trials$block_bias == "RIGHT" & color_trials$probe_loc == "RIGHT")] = TRUE
 
 color_data_for_stan = list(
 	N = length(unique(color_trials$id))
 	, L = nrow(color_trials)
 	, unit = as.numeric(factor(color_trials$id))
 	, condition = as.numeric(as.factor(color_trials$attended))
-	, y = pi+degree_to_rad(color_trials$color_diff)  # want from 0 to 360 instead of -180 to 180
+	, y = pi+degree_to_rad(color_trials$p_minus_j)  # want from 0 to 360 instead of -180 to 180
 )
 
-color_model = stan_model(file='./BayesMay4th/color.stan')
+color_model = stan_model(file='./EndogenousVisualPriorEntry-BayesianHierarchicalModel/FollowUp/FollowUpcolor.stan')
 color_post <- sampling(
 	object = color_model
 	, data = color_data_for_stan
