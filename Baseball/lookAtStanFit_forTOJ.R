@@ -69,9 +69,6 @@ ggplot(pos_pssMean_WithEffect, aes(x = pssMean, ..density.., colour = Effect))+
 
 
 
-
-
-
 ### recreate NCF using pss intercept mean and jnd intercept mean
 # group average 
 y = pnorm(-250:250, mean = -0.01*250, sd = exp(0.02)*125 )

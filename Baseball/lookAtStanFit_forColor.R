@@ -25,20 +25,20 @@ plot(ex_color_post$zlogKappaEffectSD, type = 'l')
 
 
 
-# ### plot posterior means 
-# pos_RhoMean = as.data.frame( logistic( ex_color_post$logitRhoMean) ) 
-# names(pos_RhoMean) = "RhoMean"
-# 
-# ggplot(pos_RhoMean, aes(x = RhoMean, ..density..))+
-#   geom_histogram(bins = 100)+
-#   geom_density(colour = "red")
-# 
-# pos_KappaMean = as.data.frame( exp( ex_color_post$logKappaMean) ) 
-# names(pos_KappaMean) = "KappaMean"
-# 
-# ggplot(pos_KappaMean, aes(x = KappaMean, ..density..))+
-#   geom_histogram(bins = 100)+
-#   geom_density(colour = "red")
+### plot posterior means 
+pos_RhoMean = as.data.frame( logistic( ex_color_post$logitRhoMean) ) 
+names(pos_RhoMean) = "RhoMean"
+
+ggplot(pos_RhoMean, aes(x = RhoMean, ..density..))+
+  geom_histogram(bins = 100)+
+  geom_density(colour = "red")
+
+pos_KappaMean = as.data.frame( exp( ex_color_post$logKappaMean) ) 
+names(pos_KappaMean) = "KappaMean"
+
+ggplot(pos_KappaMean, aes(x = KappaMean, ..density..))+
+  geom_histogram(bins = 100)+
+  geom_density(colour = "red")
 
 
 
@@ -66,5 +66,7 @@ ggplot(pos_RhoMean_WithEffect, aes(x = RhoMean, ..density.., colour = Effect))+
   geom_density(data = pos_RhoMean_WithEffect[pos_RhoMean_WithEffect$Effect == "Unattended",],colour = "blue")+
   labs(x = "Probability of Memory Population Mean", y = "Density", colour = "")+
   theme_gray(base_size = 18)
+  
+
   
 
