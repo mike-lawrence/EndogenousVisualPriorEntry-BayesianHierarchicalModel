@@ -210,7 +210,7 @@ color_trials$attended[ (color_trials$base_probe_dist == 0.8 & color_trials$probe
 
 
 
-#### TOJ + COLOR ####
+#### Stan ####
 toj_color_data_for_stan = list(
   N_toj = length(unique(toj_trials$id))
   , L_toj = nrow(toj_trials)
@@ -226,7 +226,7 @@ toj_color_data_for_stan = list(
 )
   
 toj_color_model = stan_model(
-  file = './EndogenousVisualPriorEntry-BayesianHierarchicalModel/Baseball/toj_color.stan'
+  file = './EndogenousVisualPriorEntry-BayesianHierarchicalModel/toj_color.stan'
 )
 
 toj_color_post = sampling(
@@ -239,7 +239,7 @@ toj_color_post = sampling(
   , include = FALSE
 )
 print(toj_color_post)
-save(toj_color_post, file = "toj_color_post_May11th2016")
+
 
 
 

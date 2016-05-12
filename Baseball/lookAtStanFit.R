@@ -2,9 +2,6 @@
 library(coda)
 library(ggplot2)
 
-# read in stan fit
-load("toj_color_post_May11th2016")
-
 # look at parameter distribution estimates  
 toj_color_post
 
@@ -187,6 +184,24 @@ ggplot(pos_pssMean_WithEffect, aes(x = pssMean, ..density.., fill = Effect))+
   geom_density(data = pos_pssMean_WithEffect[pos_pssMean_WithEffect$Effect == "Glove",], alpha = 0.5) + 
   labs(x = "PSS Population Mean", y = "Density")+
   theme_gray(base_size = 18)  # recall that negative SOAs are glove first
+
+
+
+### TOJ: recreate NCF using pss intercept mean and jnd intercept mean
+# group average 
+y = pnorm(-250:250, mean = -0.01*250, sd = exp(0.02)*250 )
+plot(-250:250, y, type = 'l')
+
+# including effects 
+yGlove = pnorm(-250:250, mean = (-0.01-0.01)*250, sd = exp(0.02 -(-0.05))*250 )
+yBase = pnorm(-250:250, mean = (-0.01+0.01)*250, sd = exp(0.02 +(-0.05))*250 )
+df = data.frame(SOA = -250:250, Prop = c(yGlove, yBase), Attend = c(rep("Glove",501), rep("Base", 501)))
+
+ggplot(data = df, aes(y = Prop, x = SOA, colour = Attend))+
+  geom_line()+
+  labs(x = "SOA (ms)", y = "Proportion of 'Safe' Responses")+
+  theme_gray(base_size = 18)
+
 
 
 

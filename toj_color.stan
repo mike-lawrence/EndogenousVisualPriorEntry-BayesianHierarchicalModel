@@ -90,8 +90,8 @@ transformed parameters{
 			logjnd_effect_per_id[this_id] <- beta[this_id,4]*population_logjnd_effect_sd + population_logjnd_effect_mean ;
 		}
 		for(this_obs in 1:L_toj){
-			trial_pss[this_obs] <- pss_intercept_per_id[id_toj[this_obs]] + pss_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs] ;  // glove is -1, base is +1
-			trial_logjnd[this_obs] <- logjnd_intercept_per_id[id_toj[this_obs]] + logjnd_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs] ; // glove is -1, base is +1
+			trial_pss[this_obs] <- pss_intercept_per_id[id_toj[this_obs]] + pss_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs] ;  // glove, RIGHT is -1... base, LEFT is +1 
+			trial_logjnd[this_obs] <- logjnd_intercept_per_id[id_toj[this_obs]] + logjnd_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs] ; // glove, RIGHT is -1... base, LEFT is +1 
 			trial_prob[this_obs] <- Phi_approx((x_toj[this_obs]-trial_pss[this_obs])/exp(trial_logjnd[this_obs])) ;
 		}
 		
