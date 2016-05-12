@@ -177,32 +177,6 @@ ggplot(
     , se = FALSE
   )
 
-### Stan 
-toj_data_for_stan = list(
-	N = length(unique(toj_trials$id))
-	, L = nrow(toj_trials)
-	, y = as.numeric(toj_trials$safe)  
-	, x = (as.numeric(toj_trials$soa2))/250  # we normalize soas, and therefore pss
-	, id = as.numeric(factor(toj_trials$id))
-	, condition = ifelse(toj_trials$glove_probe_dist==.8,-1,1)  # glove is -1 and base is +1
-)
-
-library(rstan)
-toj_model = stan_model(
-	file = './EndogenousVisualPriorEntry-BayesianHierarchicalModel/Baseball/toj.stan'
-)
-
-toj_post = sampling(
-	object = toj_model
-	, data = toj_data_for_stan
-	, iter = 1e4
-	, chains = 8
-	, cores = 8
-	, pars = 'trial_prob'
-	, include = FALSE
-)
-print(toj_post)
-
 
 
 #### Color ####
@@ -233,40 +207,6 @@ hist(color_trials$color_diff,br=100)
 
 color_trials$attended = FALSE
 color_trials$attended[ (color_trials$base_probe_dist == 0.8 & color_trials$probe_location == "base") | (color_trials$base_probe_dist == 0.2 & color_trials$probe_location == "glove")] = TRUE
-
-color_data_for_stan = list(
-	N = length(unique(color_trials$id))
-	, L = nrow(color_trials)
-	, unit = as.numeric(factor(color_trials$id))
-	, condition = as.numeric(as.factor(color_trials$attended)) # TRUE is 2, FALSE is 1 
-	, y = pi+degree_to_rad(color_trials$color_diff)  # want from 0 to 360 instead of -180 to 180
-)
-
-color_model = stan_model(
-  file='./EndogenousVisualPriorEntry-BayesianHierarchicalModel/Baseball/color.stan'
-  )
-color_post <- sampling(
-	object = color_model
-	, data = color_data_for_stan
-	, iter = 1e4
-	, chains = 8
-	, cores = 8
-	, pars = c( 
-		'logitRhoMean'
-		,'logKappaMean'
-		,'logitRhoEffectMean'
-		,'logKappaEffectMean'
-		,'zlogitRhoSD'
-		,'zlogKappaSD'
-		,'zlogitRhoEffectSD'
-		,'zlogKappaEffectSD'
-		, 'cors'
-		, 'betas'
-	)
-)
-print(color_post)
-
-
 
 
 
