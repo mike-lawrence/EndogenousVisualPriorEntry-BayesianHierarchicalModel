@@ -23,7 +23,7 @@ parameters{
 	//population means
 	real population_pss_intercept_mean ;
 	real population_pss_effect_mean ; 
-	real<lower=0> population_logjnd_intercept_mean ;
+	real population_logjnd_intercept_mean ;
 	real population_logjnd_effect_mean ;
 	//population sds
 	real<lower=0,upper=pi()/2> zpopulation_pss_intercept_sd ;
@@ -140,6 +140,7 @@ model{
   // logitRhoEffectSD ~ weibull(2,2);#student_t(4,0,1);
   // logKappaEffectSD ~ weibull(2,2);#student_t(4,0,1);
 
+  cor ~ lkj_corr(4) ;  // prior on correlation matrix 
 	
 	#sample the betas from standard multivariate normal
 	for(this_id in 1:N_toj){
