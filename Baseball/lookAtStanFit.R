@@ -34,141 +34,216 @@ plot(ex_toj_color_post$zlogKappaEffectSD, type = 'l')
 
 
 
-### violin plot for key parameters (plot things on same scale)
-# SOA scale 
-pos_SOA_scale = data.frame(  
-  value = c(
-  ex_toj_color_post$population_pss_intercept_mean * 250
-  , tan(ex_toj_color_post$zpopulation_pss_intercept_sd) * 250
-  , exp( ex_toj_color_post$population_logjnd_intercept_mean ) * 250
-  , exp( tan(ex_toj_color_post$zpopulation_logjnd_intercept_sd) ) * 250  
-  )
-  , parameter = c(
-    rep("pssInterceptMean", 40000)
-    , rep("pssInterceptSD", 40000)
-    , rep("jndInterceptMean", 40000)
-    , rep("jndInterceptSD", 40000)
-    )
-)
+# quantile functions 
+quantile_95_summary = function(y) {
+  quan = quantile(y, prob = c(0.025, 0.5, 0.975) )
+  min = quan[[1]]
+  med = quan[[2]]
+  max = quan[[3]]
+  return( c( ymin = min, y = med, ymax = max) )
+}
 
-ggplot(data = pos_SOA_scale, aes(x = parameter, y = value))+
+quantile_50_summary = function(y) {
+  quan = quantile(y, prob = c(0.25, 0.5, 0.75) )
+  min = quan[[1]]
+  med = quan[[2]]
+  max = quan[[3]]
+  return( c( ymin = min, y = med, ymax = max) )
+}
+
+
+#### violin plot for correlations ####
+library(reshape2)
+pos_corr2 = data.frame(value = ex_toj_color_post$cor)
+pos_corr2$id = rownames(pos_corr2)
+pos_corr = melt( pos_corr2 )
+names(pos_corr)[2] = c("parameter")
+
+# plot
+ggplot(data = pos_corr, aes(x = parameter, y = value))+
   geom_violin()+
-  labs(x = "", y = "SOA (ms)")+
+  labs(x = "", y = "Correlation Coefficient (r)")+
+  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
+  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
+  geom_hline(yintercept = 0)+
   theme_gray(base_size = 18) 
 
 
 
-# SOA scale - effects 
+#### violin plot for key parameters (plot things on same scale) ####
+### SOA scale 
+pos_SOA_scale = data.frame(  
+  value = c(
+  ex_toj_color_post$population_pss_intercept_mean * 250
+  , exp( ex_toj_color_post$population_logjnd_intercept_mean ) * 250
+  )
+  , parameter = c(
+    rep("pssInterceptMean", 40000)  
+    , rep("jndInterceptMean", 40000)  
+    )
+)
+
+# plot
+ggplot(data = pos_SOA_scale, aes(x = parameter, y = value))+
+  geom_violin()+
+  labs(x = "", y = "SOA (ms)")+
+  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
+  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
+  scale_x_discrete(labels = c("PSS Intercept Mean", "JND Intercept Mean"))+
+  theme_gray(base_size = 18) 
+
+# 95% HDIs 
+# pss intercept
+quantile_95_summary(ex_toj_color_post$population_pss_intercept_mean*250)
+quantile_95_summary(tan(ex_toj_color_post$zpopulation_pss_intercept_sd)*250)
+# jnd intercept (log scale, normalized)
+quantile_95_summary(ex_toj_color_post$population_logjnd_intercept_mean)
+quantile_95_summary(tan(ex_toj_color_post$zpopulation_logjnd_intercept_sd))
+
+
+
+### SOA scale - effects 
 pos_SOA_scale_effects = data.frame(  
   effect = c(
     ( (ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_effect_mean) 
     - (ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_effect_mean) ) * 250
-    , ( (tan(ex_toj_color_post$zpopulation_pss_intercept_sd) + tan(ex_toj_color_post$zpopulation_pss_effect_sd)) 
-        - ( tan(ex_toj_color_post$zpopulation_pss_intercept_sd) - tan(ex_toj_color_post$zpopulation_pss_effect_sd)) ) * 250  
     , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_effect_mean )
         - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_effect_mean  ) ) * 250 
-    , ( exp( tan(ex_toj_color_post$zpopulation_logjnd_intercept_sd) + tan(ex_toj_color_post$zpopulation_logjnd_effect_sd) ) 
-        - exp( tan(ex_toj_color_post$zpopulation_logjnd_intercept_sd) - tan(ex_toj_color_post$zpopulation_logjnd_effect_sd) ) ) * 250 
   )
   , parameter = c(
     rep("pssEffectMean", 40000)
-    , rep("pssEffectSD", 40000)
     , rep("jndEffectMean", 40000)
-    , rep("jndEffectSD", 40000)
   )
 )
 
 ggplot(data = pos_SOA_scale_effects, aes(x = parameter, y = effect))+
   geom_violin()+
+  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
+  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
   labs(x = "", y = "SOA (Base - Glove; ms)")+
+  scale_x_discrete(labels = c("PSS Effect Mean", "JND Effect Mean"))+
   geom_hline(yintercept = 0, linetype = 2)+
   theme_gray(base_size = 18) 
 
+# 95% HDIs
+# pss effect 
+quantile_95_summary(ex_toj_color_post$population_pss_effect_mean*2*250 )  # multiply by two for full difference
+quantile_95_summary(tan(ex_toj_color_post$zpopulation_pss_effect_sd)*2*250)
+# jnd effect (log scale, normalized)
+quantile_95_summary(ex_toj_color_post$population_logjnd_effect_mean*2)
+quantile_95_summary( tan(ex_toj_color_post$zpopulation_logjnd_effect_sd)*2)
 
 
-# Rho scale
+
+### Rho scale
 pos_rho_scale = data.frame(  
   value = c(
     plogis(ex_toj_color_post$logitRhoMean)
-    , plogis( tan(ex_toj_color_post$zlogitRhoSD) )
   )
   , parameter = c(
     rep("rhoInterceptMean", 40000)
-    , rep("rhoInterceptSD", 40000)
   )
 )
 
 ggplot(data = pos_rho_scale, aes(x = parameter, y = value))+
   geom_violin()+
-  labs(x = "", y = "Probability of Memory")+
+  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
+  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
+  labs(x = "", y = "\u03C1")+
+  scale_x_discrete(labels = c("Probability of Memory Intercept Mean"))+
   theme_gray(base_size = 18) 
 
+# 95% HDIs
+# rho intercept (logit scale)
+quantile_95_summary(ex_toj_color_post$logitRhoMean)
+quantile_95_summary( tan(ex_toj_color_post$zlogitRhoSD) )
 
 
-# Rho scale - effects
+
+### Rho scale - effects
 pos_rho_scale_effects = data.frame(  
   effect = c(
     ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoEffectMean/2 )
     - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoEffectMean/2 ) )
-    , ( plogis( tan(ex_toj_color_post$zlogitRhoSD) + tan(ex_toj_color_post$zlogitRhoEffectSD)/2 ) 
-        - plogis( tan(ex_toj_color_post$zlogitRhoSD) - tan(ex_toj_color_post$zlogitRhoEffectSD)/2 ) )
   )
   , parameter = c(
     rep("rhoEffectMean", 40000)
-    , rep("rhoEffectSD", 40000)
   )
 )
 
 ggplot(data = pos_rho_scale_effects, aes(x = parameter, y = effect))+
   geom_violin()+
-  labs(x = "", y = "Probability of Memory (Attended - Unattended)")+
+  labs(x = "", y = "\u03C1 (Attended - Unattended)")+
   geom_hline(yintercept = 0, linetype = 2)+
+  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
+  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
+  scale_x_discrete(labels = c("Probability of Memory Effect Mean"))+
   theme_gray(base_size = 18) 
 
+# 95% HDIs
+# rho effect (logit scale)
+quantile_95_summary(ex_toj_color_post$logitRhoEffectMean)
+quantile_95_summary( tan(ex_toj_color_post$zlogitRhoEffectSD) )  
 
 
-# Kappa scale
+
+### Kappa scale
+rad2deg <- function(rad) {(rad * 180) / (pi)}
+
 pos_kappa_scale = data.frame(  
   value = c(
-    exp(ex_toj_color_post$logKappaMean)
-    , exp( tan(ex_toj_color_post$zlogKappaSD) )
+    exp( ex_toj_color_post$logKappaMean ) # regular scale ~ kappa; log scale ~ kappa prime;
   )
   , parameter = c(
     rep("kappaInterceptMean", 40000)
-    , rep("kappaInterceptSD", 40000)
   )
 )
 
 ggplot(data = pos_kappa_scale, aes(x = parameter, y = value))+
   geom_violin()+
-  labs(x = "", y = "Fidelity of Memory")+  # are there any units here?
-  scale_y_continuous(limits = c(0,20) ) +
+  labs(x = "", y = "\u03BA")+  # are there any units here?
+  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
+  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
+  scale_x_discrete(labels = c("Fidelity of Memory Intercept Mean"))+
+#  scale_y_continuous(limits = c(0,20) ) +
   theme_gray(base_size = 18) 
 
+# 95% HDIs
+# kappa intercept (log scale, radians)
+quantile_95_summary(ex_toj_color_post$logKappaMean)
+quantile_95_summary(tan(ex_toj_color_post$zlogKappaSD))
 
-# Kappa scale - effects
+
+
+### Kappa scale - effects
 pos_kappa_scale_effects = data.frame(  
   value = c(
     ( exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaEffectMean/2) 
       - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaEffectMean/2) )
-    , ( exp( tan(ex_toj_color_post$zlogKappaSD) + tan(ex_toj_color_post$zlogKappaEffectSD)/2 )
-        - exp( tan(ex_toj_color_post$zlogKappaSD) - tan(ex_toj_color_post$zlogKappaEffectSD)/2 ) )
   )
   , parameter = c(
     rep("kappaEffectMean", 40000)
-    , rep("kappaEffectSD", 40000)
   )
 )
 
 ggplot(data = pos_kappa_scale_effects, aes(x = parameter, y = value))+
   geom_violin()+
-  labs(x = "", y = "Fidelity of Memory (Attended - Unattended)")+  # are there any units here?
+  labs(x = "", y = "\u03BA (Attended - Unattended)")+  # are there any units here?
   geom_hline(yintercept = 0, linetype = 2 ) +
+  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
+  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
+  scale_x_discrete(labels = c("Fidelity of Memory Effect Mean"))+
   theme_gray(base_size = 18) 
 
+# 95% HDIs
+# kappa effects (log scale, radians)
+quantile_95_summary(ex_toj_color_post$logKappaEffectMean)
+quantile_95_summary(tan(ex_toj_color_post$zlogKappaEffectSD))
 
 
-### TOJ: plot posterior means with effects 
+
+
+#### TOJ: plot posterior pss means with effects ####
 pos_pssMean_WithEffect = data.frame(
   c( 
     ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_effect_mean
@@ -182,19 +257,26 @@ names(pos_pssMean_WithEffect) = c("pssMean", "Effect")
 ggplot(pos_pssMean_WithEffect, aes(x = pssMean, ..density.., fill = Effect))+
   geom_density(data = pos_pssMean_WithEffect[pos_pssMean_WithEffect$Effect == "Base",], alpha = 0.5) + 
   geom_density(data = pos_pssMean_WithEffect[pos_pssMean_WithEffect$Effect == "Glove",], alpha = 0.5) + 
+  geom_vline(xintercept = 0, linetype = 2)+
   labs(x = "PSS Population Mean", y = "Density")+
   theme_gray(base_size = 18)  # recall that negative SOAs are glove first
 
 
 
-### TOJ: recreate NCF using pss intercept mean and jnd intercept mean
-# group average 
-y = pnorm(-250:250, mean = -0.01*250, sd = exp(0.02)*250 )
-plot(-250:250, y, type = 'l')
 
+#### TOJ: recreate NCF using pss intercept mean and jnd intercept mean ####
 # including effects 
-yGlove = pnorm(-250:250, mean = (-0.01-0.01)*250, sd = exp(0.02 -(-0.05))*250 )
-yBase = pnorm(-250:250, mean = (-0.01+0.01)*250, sd = exp(0.02 +(-0.05))*250 )
+yGlove = pnorm(
+  -250:250
+  , mean = ( mean(ex_toj_color_post$population_pss_intercept_mean) - mean(ex_toj_color_post$population_pss_effect_mean) ) * 250
+  , sd = ( exp( mean(ex_toj_color_post$population_logjnd_intercept_mean) - mean(ex_toj_color_post$population_logjnd_effect_mean) )   ) * 250
+)
+yBase = pnorm(
+  -250:250
+  , mean = ( mean(ex_toj_color_post$population_pss_intercept_mean) + mean(ex_toj_color_post$population_pss_effect_mean) ) * 250
+  , sd = ( exp( mean(ex_toj_color_post$population_logjnd_intercept_mean) + mean(ex_toj_color_post$population_logjnd_effect_mean) )   ) * 250
+  
+)
 df = data.frame(SOA = -250:250, Prop = c(yGlove, yBase), Attend = c(rep("Glove",501), rep("Base", 501)))
 
 ggplot(data = df, aes(y = Prop, x = SOA, colour = Attend))+
@@ -205,7 +287,7 @@ ggplot(data = df, aes(y = Prop, x = SOA, colour = Attend))+
 
 
 
-### Color: plot posterior means with effects
+#### Color: plot posterior means with effects ####
 pos_rhoMean_WithEffect = data.frame(
   c( 
     plogis( ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoEffectMean/2) 

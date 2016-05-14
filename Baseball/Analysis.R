@@ -175,7 +175,8 @@ ggplot(
     , method.args = list(family = "binomial")
     , formula = y ~ splines::ns(x,3)
     , se = FALSE
-  )
+  ) +
+  geom_point()
 
 
 
