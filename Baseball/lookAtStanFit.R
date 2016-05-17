@@ -34,20 +34,41 @@ plot(ex_toj_color_post$zlogKappaEffectSD, type = 'l')
 
 
 
-# quantile functions 
-quantile_95_summary = function(y) {
-  quan = quantile(y, prob = c(0.025, 0.5, 0.975) )
-  min = quan[[1]]
-  med = quan[[2]]
-  max = quan[[3]]
+# # quantile functions 
+# quantile_95_summary = function(y) {
+#   quan = quantile(y, prob = c(0.025, 0.5, 0.975) )
+#   min = quan[[1]]
+#   med = quan[[2]]
+#   max = quan[[3]]
+#   return( c( ymin = min, y = med, ymax = max) )
+# }
+# 
+# quantile_50_summary = function(y) {
+#   quan = quantile(y, prob = c(0.25, 0.5, 0.75) )
+#   min = quan[[1]]
+#   med = quan[[2]]
+#   max = quan[[3]]
+#   return( c( ymin = min, y = med, ymax = max) )
+# }
+
+# HDI and mode functions
+get_95_HDI = function(y) {
+  HDI = HPDinterval( as.mcmc( as.vector(y) ), prob = .95 )
+  Den = density( as.vector(y) )
+  min = HDI[1]
+  # mod = Den$x[which(Den$y == max(Den$y))] # mode as indicator of central tendency
+  med = median(y)
+  max = HDI[2]
   return( c( ymin = min, y = med, ymax = max) )
 }
 
-quantile_50_summary = function(y) {
-  quan = quantile(y, prob = c(0.25, 0.5, 0.75) )
-  min = quan[[1]]
-  med = quan[[2]]
-  max = quan[[3]]
+get_50_HDI = function(y) {
+  HDI = HPDinterval( as.mcmc( as.vector(y) ), prob = .50 )
+  Den = density( as.vector(y) )
+  min = HDI[1]
+  # mod = Den$x[which(Den$y == max(Den$y))]  # mode as indicator of central tendency
+  med = median(y)
+  max = HDI[2]
   return( c( ymin = min, y = med, ymax = max) )
 }
 
@@ -63,8 +84,8 @@ names(pos_corr)[2] = c("parameter")
 ggplot(data = pos_corr, aes(x = parameter, y = value))+
   geom_violin()+
   labs(x = "", y = "Correlation Coefficient (r)")+
-  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
-  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
+#   stat_summary(fun.data = get_95_HDI, size = 0.5)+
+#   stat_summary(fun.data = get_50_HDI, size = 1.5)+  # error in computing stat_summary here...
   geom_hline(yintercept = 0)+
   theme_gray(base_size = 18) 
 
@@ -78,8 +99,8 @@ pos_SOA_scale = data.frame(
   , exp( ex_toj_color_post$population_logjnd_intercept_mean ) * 250
   )
   , parameter = c(
-    rep("pssInterceptMean", 40000)  
-    , rep("jndInterceptMean", 40000)  
+    rep("PSS Intercept Mean", 40000)  
+    , rep("JND Intercept Mean", 40000)  
     )
 )
 
@@ -87,18 +108,19 @@ pos_SOA_scale = data.frame(
 ggplot(data = pos_SOA_scale, aes(x = parameter, y = value))+
   geom_violin()+
   labs(x = "", y = "SOA (ms)")+
-  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
-  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
-  scale_x_discrete(labels = c("PSS Intercept Mean", "JND Intercept Mean"))+
+  stat_summary(fun.data = get_95_HDI, size = 0.5)+
+  stat_summary(fun.data = get_50_HDI, size = 1.5)+
+#  scale_x_discrete(labels = c("PSS Intercept Mean", "JND Intercept Mean"))+
   theme_gray(base_size = 18) 
 
 # 95% HDIs 
 # pss intercept
-quantile_95_summary(ex_toj_color_post$population_pss_intercept_mean*250)
-quantile_95_summary(tan(ex_toj_color_post$zpopulation_pss_intercept_sd)*250)
-# jnd intercept (log scale, normalized)
-quantile_95_summary(ex_toj_color_post$population_logjnd_intercept_mean)
-quantile_95_summary(tan(ex_toj_color_post$zpopulation_logjnd_intercept_sd))
+get_95_HDI(ex_toj_color_post$population_pss_intercept_mean*250)
+# get_95_HDI(tan(ex_toj_color_post$zpopulation_pss_intercept_sd)*250)
+# jnd intercept 
+get_95_HDI(exp( ex_toj_color_post$population_logjnd_intercept_mean ) * 250)
+# get_95_HDI(tan(ex_toj_color_post$zpopulation_logjnd_intercept_sd))  # (log scale, normalized)
+
 
 
 
@@ -111,28 +133,32 @@ pos_SOA_scale_effects = data.frame(
         - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_effect_mean  ) ) * 250 
   )
   , parameter = c(
-    rep("pssEffectMean", 40000)
-    , rep("jndEffectMean", 40000)
+    rep("PSS Effect Mean", 40000)
+    , rep("JND Effect Mean", 40000)
   )
 )
 
 ggplot(data = pos_SOA_scale_effects, aes(x = parameter, y = effect))+
   geom_violin()+
-  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
-  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
+  stat_summary(fun.data = get_95_HDI, size = 0.5)+
+  stat_summary(fun.data = get_50_HDI, size = 1.5)+
   labs(x = "", y = "SOA (Base - Glove; ms)")+
-  scale_x_discrete(labels = c("PSS Effect Mean", "JND Effect Mean"))+
+#  scale_x_discrete(labels = c("PSS Effect Mean", "JND Effect Mean"))+
   geom_hline(yintercept = 0, linetype = 2)+
   theme_gray(base_size = 18) 
 
 # 95% HDIs
 # pss effect 
-quantile_95_summary(ex_toj_color_post$population_pss_effect_mean*2*250 )  # multiply by two for full difference
-quantile_95_summary(tan(ex_toj_color_post$zpopulation_pss_effect_sd)*2*250)
-# jnd effect (log scale, normalized)
-quantile_95_summary(ex_toj_color_post$population_logjnd_effect_mean*2)
-quantile_95_summary( tan(ex_toj_color_post$zpopulation_logjnd_effect_sd)*2)
-
+get_95_HDI(ex_toj_color_post$population_pss_effect_mean*2*250 )  # multiply by two for full difference
+# get_95_HDI(tan(ex_toj_color_post$zpopulation_pss_effect_sd)*2*250)  
+# print("ERROR: Does it make sense to multiply the SD by 2?")
+# jnd effect 
+get_95_HDI(
+  ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_effect_mean )
+    - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_effect_mean  ) ) * 250 
+)
+# get_95_HDI( tan(ex_toj_color_post$zpopulation_logjnd_effect_sd)*2) #  (log scale, normalized)
+# print("ERROR: Does it make sense to multiply the SD by 2?")
 
 
 ### Rho scale
@@ -147,16 +173,16 @@ pos_rho_scale = data.frame(
 
 ggplot(data = pos_rho_scale, aes(x = parameter, y = value))+
   geom_violin()+
-  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
-  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
+  stat_summary(fun.data = get_95_HDI, size = 0.5)+
+  stat_summary(fun.data = get_50_HDI, size = 1.5)+
   labs(x = "", y = "\u03C1")+
   scale_x_discrete(labels = c("Probability of Memory Intercept Mean"))+
   theme_gray(base_size = 18) 
 
 # 95% HDIs
-# rho intercept (logit scale)
-quantile_95_summary(ex_toj_color_post$logitRhoMean)
-quantile_95_summary( tan(ex_toj_color_post$zlogitRhoSD) )
+# rho intercept 
+get_95_HDI( plogis(ex_toj_color_post$logitRhoMean) )
+# get_95_HDI( tan(ex_toj_color_post$zlogitRhoSD) ) # (logit scale)
 
 
 
@@ -175,20 +201,23 @@ ggplot(data = pos_rho_scale_effects, aes(x = parameter, y = effect))+
   geom_violin()+
   labs(x = "", y = "\u03C1 (Attended - Unattended)")+
   geom_hline(yintercept = 0, linetype = 2)+
-  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
-  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
+  stat_summary(fun.data = get_95_HDI, size = 0.5)+
+  stat_summary(fun.data = get_50_HDI, size = 1.5)+
   scale_x_discrete(labels = c("Probability of Memory Effect Mean"))+
   theme_gray(base_size = 18) 
 
 # 95% HDIs
-# rho effect (logit scale)
-quantile_95_summary(ex_toj_color_post$logitRhoEffectMean)
-quantile_95_summary( tan(ex_toj_color_post$zlogitRhoEffectSD) )  
+# rho effect 
+get_95_HDI( 
+  ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoEffectMean/2 )
+              - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoEffectMean/2 ) ) 
+  ) 
+# get_95_HDI( tan(ex_toj_color_post$zlogitRhoEffectSD) )  # (logit scale)
 
 
 
 ### Kappa scale
-rad2deg <- function(rad) {(rad * 180) / (pi)}
+# rad2deg <- function(rad) {(rad * 180) / (pi)}
 
 pos_kappa_scale = data.frame(  
   value = c(
@@ -202,16 +231,16 @@ pos_kappa_scale = data.frame(
 ggplot(data = pos_kappa_scale, aes(x = parameter, y = value))+
   geom_violin()+
   labs(x = "", y = "\u03BA")+  # are there any units here?
-  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
-  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
+  stat_summary(fun.data = get_95_HDI, size = 0.5)+
+  stat_summary(fun.data = get_50_HDI, size = 1.5)+
   scale_x_discrete(labels = c("Fidelity of Memory Intercept Mean"))+
 #  scale_y_continuous(limits = c(0,20) ) +
   theme_gray(base_size = 18) 
 
 # 95% HDIs
-# kappa intercept (log scale, radians)
-quantile_95_summary(ex_toj_color_post$logKappaMean)
-quantile_95_summary(tan(ex_toj_color_post$zlogKappaSD))
+# kappa intercept (*radians*)
+get_95_HDI( exp( ex_toj_color_post$logKappaMean ) )
+# get_95_HDI(tan(ex_toj_color_post$zlogKappaSD))  # (log scale)
 
 
 
@@ -230,15 +259,18 @@ ggplot(data = pos_kappa_scale_effects, aes(x = parameter, y = value))+
   geom_violin()+
   labs(x = "", y = "\u03BA (Attended - Unattended)")+  # are there any units here?
   geom_hline(yintercept = 0, linetype = 2 ) +
-  stat_summary(fun.data = quantile_95_summary, size = 0.5)+
-  stat_summary(fun.data = quantile_50_summary, size = 1.5)+
+  stat_summary(fun.data = get_95_HDI, size = 0.5)+
+  stat_summary(fun.data = get_50_HDI, size = 1.5)+
   scale_x_discrete(labels = c("Fidelity of Memory Effect Mean"))+
   theme_gray(base_size = 18) 
 
 # 95% HDIs
-# kappa effects (log scale, radians)
-quantile_95_summary(ex_toj_color_post$logKappaEffectMean)
-quantile_95_summary(tan(ex_toj_color_post$zlogKappaEffectSD))
+# kappa effects (*radians*)
+get_95_HDI( 
+  exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaEffectMean/2) 
+                     - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaEffectMean/2) 
+)
+# get_95_HDI(tan(ex_toj_color_post$zlogKappaEffectSD)) # (log scale)
 
 
 
@@ -268,13 +300,13 @@ ggplot(pos_pssMean_WithEffect, aes(x = pssMean, ..density.., fill = Effect))+
 # including effects 
 yGlove = pnorm(
   -250:250
-  , mean = ( mean(ex_toj_color_post$population_pss_intercept_mean) - mean(ex_toj_color_post$population_pss_effect_mean) ) * 250
-  , sd = ( exp( mean(ex_toj_color_post$population_logjnd_intercept_mean) - mean(ex_toj_color_post$population_logjnd_effect_mean) )   ) * 250
+  , mean = ( median(ex_toj_color_post$population_pss_intercept_mean) - median(ex_toj_color_post$population_pss_effect_mean) ) * 250
+  , sd = ( exp( median(ex_toj_color_post$population_logjnd_intercept_mean) - median(ex_toj_color_post$population_logjnd_effect_mean) )   ) * 250
 )
 yBase = pnorm(
   -250:250
-  , mean = ( mean(ex_toj_color_post$population_pss_intercept_mean) + mean(ex_toj_color_post$population_pss_effect_mean) ) * 250
-  , sd = ( exp( mean(ex_toj_color_post$population_logjnd_intercept_mean) + mean(ex_toj_color_post$population_logjnd_effect_mean) )   ) * 250
+  , mean = ( median(ex_toj_color_post$population_pss_intercept_mean) + median(ex_toj_color_post$population_pss_effect_mean) ) * 250
+  , sd = ( exp( median(ex_toj_color_post$population_logjnd_intercept_mean) + median(ex_toj_color_post$population_logjnd_effect_mean) )   ) * 250
   
 )
 df = data.frame(SOA = -250:250, Prop = c(yGlove, yBase), Attend = c(rep("Glove",501), rep("Base", 501)))
