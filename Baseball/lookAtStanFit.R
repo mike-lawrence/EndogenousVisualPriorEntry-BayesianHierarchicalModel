@@ -102,16 +102,28 @@ pos_SOA_scale = data.frame(
     rep("PSS Intercept Mean", 40000)  
     , rep("JND Intercept Mean", 40000)  
     )
+  # , dummy = rep("dummy", 80000)
 )
 
 # plot
-ggplot(data = pos_SOA_scale, aes(x = parameter, y = value))+
-  geom_violin()+
+ggplot(data = pos_SOA_scale)+
+  geom_violin(aes(x = parameter, y = value))+
+  # coord_flip()+
   labs(x = "", y = "SOA (ms)")+
-  stat_summary(fun.data = get_95_HDI, size = 0.5)+
-  stat_summary(fun.data = get_50_HDI, size = 1.5)+
-#  scale_x_discrete(labels = c("PSS Intercept Mean", "JND Intercept Mean"))+
-  theme_gray(base_size = 18) 
+  # stat_summary(aes(x = dummy, y = value), fun.data = get_95_HDI, size = 0.5)+
+  # stat_summary(aes(x = dummy, y = value), fun.data = get_50_HDI, size = 1.5)+
+  stat_summary(aes(x = parameter, y = value), fun.data = get_95_HDI, size = 0.7)+  # a bit thicker
+  stat_summary(aes(x = parameter, y = value), fun.data = get_50_HDI, size = 2.5)+
+  facet_wrap(~parameter, scales = "free")+
+  # scale_x_discrete(labels = "", breaks = c())+
+  # geom_hline(yintercept = 0, linetype = 2)+
+  theme_gray(base_size = 24)+
+  theme(
+    panel.grid.major = element_line(size = 1.5)
+    , panel.grid.minor = element_line(size = 1)
+    , strip.background = element_blank()
+    , strip.text.x = element_blank() 
+    )
 
 # 95% HDIs 
 # pss intercept
@@ -141,11 +153,13 @@ pos_SOA_scale_effects = data.frame(
 ggplot(data = pos_SOA_scale_effects, aes(x = parameter, y = effect))+
   geom_violin()+
   stat_summary(fun.data = get_95_HDI, size = 0.5)+
-  stat_summary(fun.data = get_50_HDI, size = 1.5)+
+  stat_summary(fun.data = get_50_HDI, size = 2.5)+
   labs(x = "", y = "SOA (Base - Glove; ms)")+
 #  scale_x_discrete(labels = c("PSS Effect Mean", "JND Effect Mean"))+
-  geom_hline(yintercept = 0, linetype = 2)+
-  theme_gray(base_size = 18) 
+  geom_hline(yintercept = 0, linetype = 2, size = 1)+
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1)) 
 
 # 95% HDIs
 # pss effect 
@@ -174,10 +188,12 @@ pos_rho_scale = data.frame(
 ggplot(data = pos_rho_scale, aes(x = parameter, y = value))+
   geom_violin()+
   stat_summary(fun.data = get_95_HDI, size = 0.5)+
-  stat_summary(fun.data = get_50_HDI, size = 1.5)+
+  stat_summary(fun.data = get_50_HDI, size = 2.5)+
   labs(x = "", y = "\u03C1")+
   scale_x_discrete(labels = c("Probability of Memory Intercept Mean"))+
-  theme_gray(base_size = 18) 
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1)) 
 
 # 95% HDIs
 # rho intercept 
@@ -200,11 +216,13 @@ pos_rho_scale_effects = data.frame(
 ggplot(data = pos_rho_scale_effects, aes(x = parameter, y = effect))+
   geom_violin()+
   labs(x = "", y = "\u03C1 (Attended - Unattended)")+
-  geom_hline(yintercept = 0, linetype = 2)+
+  geom_hline(yintercept = 0, linetype = 2, size = 1)+
   stat_summary(fun.data = get_95_HDI, size = 0.5)+
-  stat_summary(fun.data = get_50_HDI, size = 1.5)+
+  stat_summary(fun.data = get_50_HDI, size = 2.5)+
   scale_x_discrete(labels = c("Probability of Memory Effect Mean"))+
-  theme_gray(base_size = 18) 
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1)) 
 
 # 95% HDIs
 # rho effect 
@@ -232,10 +250,12 @@ ggplot(data = pos_kappa_scale, aes(x = parameter, y = value))+
   geom_violin()+
   labs(x = "", y = "\u03BA")+  # are there any units here?
   stat_summary(fun.data = get_95_HDI, size = 0.5)+
-  stat_summary(fun.data = get_50_HDI, size = 1.5)+
+  stat_summary(fun.data = get_50_HDI, size = 2.5)+
   scale_x_discrete(labels = c("Fidelity of Memory Intercept Mean"))+
 #  scale_y_continuous(limits = c(0,20) ) +
-  theme_gray(base_size = 18) 
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1))
 
 # 95% HDIs
 # kappa intercept (*radians*)
@@ -258,11 +278,13 @@ pos_kappa_scale_effects = data.frame(
 ggplot(data = pos_kappa_scale_effects, aes(x = parameter, y = value))+
   geom_violin()+
   labs(x = "", y = "\u03BA (Attended - Unattended)")+  # are there any units here?
-  geom_hline(yintercept = 0, linetype = 2 ) +
+  geom_hline(yintercept = 0, linetype = 2, size = 1 ) +
   stat_summary(fun.data = get_95_HDI, size = 0.5)+
-  stat_summary(fun.data = get_50_HDI, size = 1.5)+
+  stat_summary(fun.data = get_50_HDI, size = 2.5)+
   scale_x_discrete(labels = c("Fidelity of Memory Effect Mean"))+
-  theme_gray(base_size = 18) 
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1))
 
 # 95% HDIs
 # kappa effects (*radians*)
@@ -275,23 +297,23 @@ get_95_HDI(
 
 
 
-#### TOJ: plot posterior pss means with effects ####
-pos_pssMean_WithEffect = data.frame(
-  c( 
-    ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_effect_mean
-    , ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_effect_mean
-  ) * 250
-  , c(rep("Base",40000), rep("Glove", 40000))
-)
-names(pos_pssMean_WithEffect) = c("pssMean", "Effect")
-
-# overlapping
-ggplot(pos_pssMean_WithEffect, aes(x = pssMean, ..density.., fill = Effect))+
-  geom_density(data = pos_pssMean_WithEffect[pos_pssMean_WithEffect$Effect == "Base",], alpha = 0.5) + 
-  geom_density(data = pos_pssMean_WithEffect[pos_pssMean_WithEffect$Effect == "Glove",], alpha = 0.5) + 
-  geom_vline(xintercept = 0, linetype = 2)+
-  labs(x = "PSS Population Mean", y = "Density")+
-  theme_gray(base_size = 18)  # recall that negative SOAs are glove first
+# #### TOJ: plot posterior pss means with effects ####
+# pos_pssMean_WithEffect = data.frame(
+#   c( 
+#     ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_effect_mean
+#     , ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_effect_mean
+#   ) * 250
+#   , c(rep("Base",40000), rep("Glove", 40000))
+# )
+# names(pos_pssMean_WithEffect) = c("pssMean", "Effect")
+# 
+# # overlapping
+# ggplot(pos_pssMean_WithEffect, aes(x = pssMean, ..density.., fill = Effect))+
+#   geom_density(data = pos_pssMean_WithEffect[pos_pssMean_WithEffect$Effect == "Base",], alpha = 0.5) + 
+#   geom_density(data = pos_pssMean_WithEffect[pos_pssMean_WithEffect$Effect == "Glove",], alpha = 0.5) + 
+#   geom_vline(xintercept = 0, linetype = 2)+
+#   labs(x = "PSS Population Mean", y = "Density")+
+#   theme_gray(base_size = 18)  # recall that negative SOAs are glove first
 
 
 
@@ -311,10 +333,15 @@ yBase = pnorm(
 )
 df = data.frame(SOA = -250:250, Prop = c(yGlove, yBase), Attend = c(rep("Glove",501), rep("Base", 501)))
 
+# stretch out picture
 ggplot(data = df, aes(y = Prop, x = SOA, colour = Attend))+
-  geom_line()+
+  geom_line(size = 1.25)+
+  # scale_color_manual("Attend", values = c("red", "blue"))+
+  scale_color_hue("Attend", l = c(60, 15), c = c(100, 50), h = c(240, 360) ) +
   labs(x = "SOA (ms)", y = "Proportion of 'Safe' Responses")+
-  theme_gray(base_size = 18)
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1))
 
 
 
@@ -334,5 +361,8 @@ names(pos_rhoMean_WithEffect) = c("rhoMean", "Effect")
 ggplot(pos_rhoMean_WithEffect, aes(x = rhoMean, ..density.., fill = Effect))+
   geom_density(data = pos_rhoMean_WithEffect[pos_rhoMean_WithEffect$Effect == "Attended",],alpha = 0.5)+
   geom_density(data = pos_rhoMean_WithEffect[pos_rhoMean_WithEffect$Effect == "Unattended",],alpha = 0.5)+
+  scale_fill_hue("Effect", l = c(90, 45), c = c(100, 50) ) +
   labs(x = "Probability of Memory Population Mean", y = "Density", colour = "")+
-  theme_gray(base_size = 18)
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1))
