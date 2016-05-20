@@ -209,6 +209,42 @@ hist(color_trials$color_diff,br=100)
 color_trials$attended = FALSE
 color_trials$attended[ (color_trials$base_probe_dist == 0.8 & color_trials$probe_location == "base") | (color_trials$base_probe_dist == 0.2 & color_trials$probe_location == "glove")] = TRUE
 
+# mixture model - rho and kappa by participant
+source("../../fit_uvm.R")
+color_trials$color_diff_radians = color_trials$color_diff*pi/180
+fitted_all = ddply(
+  .data = color_trials
+  , .variables = .(id)
+  , .fun = function(piece_of_df){
+    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
+    to_return = data.frame(
+      kappa_prime = fit$kappa_prime
+      , rho = fit$rho
+    )
+    return(to_return)
+  }
+  , .progress = 'time'
+)
+
+# how many participants are perfect across the board?
+perfection_count = sum(fitted_all$rho == 1)
+perfection_count
+perfection_rate = perfection_count/nrow(fitted_all)
+perfection_rate
+
+ggplot(
+  data = fitted_all
+  , mapping = aes(rho)  #, fill = attended)
+)+ 
+  geom_histogram(bins = 50)+
+  labs(x = "Probability of Memory", y = "Frequency")+
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1))
+
+
+
+
 
 
 #### Stan ####
