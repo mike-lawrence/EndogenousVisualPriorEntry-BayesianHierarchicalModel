@@ -144,7 +144,14 @@ toj_trials[toj_trials$soa2 == "240",]$soa2 = 250
 # Negative SOAs means Ball first 
 toj_trials$soa2[toj_trials$first_arrival == "ball"] = -toj_trials$soa2[toj_trials$first_arrival == "ball"]
 
-### Graph Psychometric Functions 
+
+
+### save toj trials for posterior predictive check
+# aggregate with respect to id and condition 
+save(toj_trials, file = "../toj_trials.Rdata")
+
+
+### Graph participant-wise psychometric functions 
 toj_means_by_id_by_condition = ddply(
   .data = toj_trials
   , .variables = .(id,base_probe_dist, soa2)
@@ -172,11 +179,42 @@ ggplot(
   )+
   geom_smooth(
     method = "glm"
-    , method.args = list(family = "binomial")
-    , formula = y ~ splines::ns(x,3)
+    , method.args = list(family = binomial(link="probit"))
     , se = FALSE
   ) +
   geom_point()
+
+### Get PSSs and JNDs
+toj_by_condition = ddply(
+  .data = toj_trials
+  , .variables = .(id, base_probe_dist)  
+  , .fun = function(x){
+    fit = glm(
+      formula = safe~soa2
+      , data = x
+      , family = binomial(link = "probit")
+    )
+    to_return = data.frame(
+      id = x$id[1]
+      , pss = -coef(fit)[1]/coef(fit)[2]
+      , jnd = (  (1-coef(fit)[1])/coef(fit)[2] -  (-1-coef(fit)[1])/coef(fit)[2] ) / 2  # unsure about this
+    )
+    return(to_return)
+  }
+)
+
+# look at descriptive statistics (mean values) of raw data to compare with parameter estimates of model later
+pss_means_by_condition = aggregate(pss ~ base_probe_dist, data = toj_by_condition, FUN = mean) 
+names(pss_means_by_condition)[1] = "attend"
+levels(pss_means_by_condition$attend) = c("glove", "base")
+pss_means_by_condition
+
+jnd_means_by_condition = aggregate(jnd ~ base_probe_dist, data = toj_by_condition, FUN = mean) 
+names(jnd_means_by_condition)[1] = "attend"
+levels(jnd_means_by_condition$attend) = c("glove", "base")
+jnd_means_by_condition
+plot(toj_by_condition$jnd)  # get a sense of outliers
+
 
 
 
@@ -209,9 +247,17 @@ hist(color_trials$color_diff,br=100)
 color_trials$attended = FALSE
 color_trials$attended[ (color_trials$base_probe_dist == 0.8 & color_trials$probe_location == "base") | (color_trials$base_probe_dist == 0.2 & color_trials$probe_location == "glove")] = TRUE
 
+color_trials$color_diff_radians = color_trials$color_diff*pi/180
+
+
+
+### save color trials for posterior predicitve check 
+save(color_trials, file = "../color_trials.Rdata")
+
+
+
 # mixture model - rho and kappa by participant
 source("../../fit_uvm.R")
-color_trials$color_diff_radians = color_trials$color_diff*pi/180
 fitted_all = ddply(
   .data = color_trials
   , .variables = .(id)
@@ -242,8 +288,30 @@ ggplot(
   theme(panel.grid.major = element_line(size = 1.5)
         ,panel.grid.minor = element_line(size = 1))
 
+# get rho and kappa by condition 
+fitted_by_condition = ddply(
+  .data = color_trials
+  , .variables = .(id, attended)
+  , .fun = function(piece_of_df){
+    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
+    to_return = data.frame(
+      kappa_prime = fit$kappa_prime
+      , rho = fit$rho
+    )
+    return(to_return)
+  }
+  , .progress = 'time'
+)
 
+# look at descriptive statistics (mean values) of raw data to compare with parameter estimates of model later
+rho_means_by_condition = aggregate(rho ~ attended, data = fitted_by_condition, FUN = mean)
+rho_means_by_condition
+plot(fitted_by_condition$rho)  # get a sense of outliers
 
+kappa_means_by_condition = aggregate(kappa_prime ~ attended, data = fitted_by_condition, FUN = mean)
+kappa_means_by_condition$kappa_prime = exp(kappa_means_by_condition$kappa_prime)
+names(kappa_means_by_condition)[2] = "kappa"
+kappa_means_by_condition
 
 
 
