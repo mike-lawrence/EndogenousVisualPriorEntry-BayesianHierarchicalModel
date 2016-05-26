@@ -2,6 +2,7 @@
 library(plyr)
 library(ggplot2)
 library(grid)
+library(rstan)
 
 
 
@@ -99,7 +100,7 @@ a$toj_rt = as.numeric(a$toj_rt)
 summary(a)
 
 # double check 20/80
-table(a$probe_loc, a$block_num)    
+table(a$probe_loc, a$block_num, a$id)    
 # continue 
 aggregate(trial_num ~ block_num, data = a, FUN = length) # good
 table(a$t1_loc, a$block_num) # good
@@ -196,7 +197,8 @@ ggplot(
     , method.args = list(family = "binomial")
     , formula = y ~ splines::ns(x,3)
     , se = FALSE
-  )
+  )+
+  theme(legend.position = "none")  # to be blind to the condition 
 
 
 
@@ -227,6 +229,39 @@ hist(color_trials$p_minus_j,br=100)
 color_trials$attended = FALSE
 color_trials$attended[ (color_trials$block_bias == "LEFT" & color_trials$probe_loc == "LEFT") | (color_trials$block_bias == "RIGHT" & color_trials$probe_loc == "RIGHT")] = TRUE
 
+# mixture model - rho and kappa by participant
+source("../fit_uvm.R")
+color_trials$color_diff_radians = color_trials$p_minus_j*pi/180
+fitted_all = ddply(
+  .data = color_trials
+  , .variables = .(id)
+  , .fun = function(piece_of_df){
+    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
+    to_return = data.frame(
+      kappa_prime = fit$kappa_prime
+      , rho = fit$rho
+    )
+    return(to_return)
+  }
+  , .progress = 'time'
+)
+
+# how many participants are perfect across the board?
+perfection_count = sum(fitted_all$rho == 1)
+perfection_count
+perfection_rate = perfection_count/nrow(fitted_all)
+perfection_rate
+
+ggplot(
+  data = fitted_all
+  , mapping = aes(rho)  #, fill = attended)
+)+ 
+  geom_histogram(bins = 50)+
+  labs(x = "Probability of Memory", y = "Frequency")+
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1))
+
 
 
 #### Stan ####
@@ -245,7 +280,7 @@ toj_color_data_for_stan = list(
 )
 
 toj_color_model = stan_model(
-  file = './EndogenousVisualPriorEntry-BayesianHierarchicalModel/toj_color.stan'
+  file = '../EndogenousVisualPriorEntry-BayesianHierarchicalModel/toj_color.stan'
 )
 
 toj_color_post = sampling(
@@ -254,7 +289,11 @@ toj_color_post = sampling(
   , iter = 1e2
   , chains = 1
   , cores = 1
-  , pars = c('trial_prob', 'p')
+  , pars = c('trial_prob', 'p'
+             ,'population_pss_effect_mean'
+             , 'population_logjnd_effect_mean'
+             , 'logitRhoEffectMean'
+             , 'logKappaEffectMean')  # blind to the effects as I collect data
   , include = FALSE
 )
 print(toj_color_post)
