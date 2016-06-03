@@ -2,6 +2,7 @@
 library(plyr)
 library(ggplot2)
 library(grid)
+library(rstan)
 
 
 
@@ -58,9 +59,9 @@ length(checksums)
 #count trials per id
 temp = data.frame(table(id=a$id))
 
-# #discard those with too few trials
-# keep = temp$id[temp$Freq==600]  # 40 * 3 + 240 * 2 = 600
-# a = a[a$id %in% keep,]
+#discard those with too few trials
+keep = temp$id[temp$Freq==600]  # 40 * 3 + 240 * 2 = 600
+a = a[a$id %in% keep,]
 
 length(unique(a$id))
 
@@ -99,15 +100,15 @@ a$toj_rt = as.numeric(a$toj_rt)
 summary(a)
 
 # double check 20/80
-table(a$probe_loc, a$block_num)    
+table(a$probe_loc, a$block_num, a$id)    
 # continue 
 aggregate(trial_num ~ block_num, data = a, FUN = length) # good
 table(a$t1_loc, a$block_num) # good
 table(a$t1_type, a$block_num) # good
 
-# # get experimental blocks (3, 5)
-# a_exp = a[a$block_num %in% c(3,5),]
-a_exp = a[a$block_num == 3, ]
+# get experimental blocks (3, 5)
+a_exp = a[a$block_num %in% c(3,5),]
+
 
 
 #### TOJ ####
@@ -115,29 +116,43 @@ toj_trials = a_exp
 toj_trials = toj_trials[toj_trials$trial_type == "TARGET", ]
 toj_trials$toj_judgement = as.factor(as.character(toj_trials$toj_judgement))
 
-if ( unique(toj_trials$toj_judgement_type) == "first" ) {
-  
-  toj_trials$correct_judgement = toj_trials$t1_type == toj_trials$toj_judgement
-  toj_trials$toj_judgement_side = "NA"
-  toj_trials[toj_trials$correct_judgement,]$toj_judgement_side = as.character( toj_trials[toj_trials$correct_judgement,]$t1_loc )
-  toj_trials[!toj_trials$correct_judgement,]$toj_judgement_side = ifelse(toj_trials[!toj_trials$correct_judgement,]$t1_loc == "LEFT", "RIGHT", "LEFT")
-  toj_trials$toj_judgement_side = as.factor(toj_trials$toj_judgement_side)
-  
-} else if ( unique(toj_trials$toj_judgement_type) == "second" ) {
-  
-  toj_trials$correct_judgement = toj_trials$t1_type != toj_trials$toj_judgement
-  toj_trials$toj_judgement_side = "NA"
-  toj_trials[!toj_trials$correct_judgement,]$toj_judgement_side =  as.character( toj_trials[!toj_trials$correct_judgement,]$t1_loc )
-  toj_trials[toj_trials$correct_judgement,]$toj_judgement_side = ifelse(toj_trials[toj_trials$correct_judgement,]$t1_loc == "LEFT", "RIGHT", "LEFT")
-  toj_trials$toj_judgement_side = as.factor(toj_trials$toj_judgement_side)
-  
-} else {
-  print("What is the toj_judgement_type? It is not 'first' or 'second'.")
-}
-
 # looking left condition since we looked at 'safe' (not out) proportion and since that event occured on the left side
-toj_trials$left_TF = FALSE
-toj_trials$left_TF[toj_trials$toj_judgement_side == "LEFT"] = TRUE  
+# interested in their perception of which came first, even when they were asked which came second
+toj_trials$left_first_TF = FALSE
+
+
+toj_trials = ddply(
+  .data = toj_trials
+  , .variable = .(id)
+  , .fun = function(x) {
+    if ( unique(x$toj_judgement_type) == "first" ) {
+      
+      x$correct_judgement = x$t1_type == x$toj_judgement
+      x$toj_judgement_side = "NA"
+      x[x$correct_judgement,]$toj_judgement_side = as.character( x[x$correct_judgement,]$t1_loc )
+      x[!x$correct_judgement,]$toj_judgement_side = ifelse(x[!x$correct_judgement,]$t1_loc == "LEFT", "RIGHT", "LEFT")
+      x$toj_judgement_side = as.factor(x$toj_judgement_side)
+      
+      x$left_first_TF[x$toj_judgement_side == "LEFT"] = TRUE 
+      
+    } else if ( unique(x$toj_judgement_type) == "second" ) {
+      
+      x$correct_judgement = x$t1_type != x$toj_judgement
+      x$toj_judgement_side = "NA"
+      x[!x$correct_judgement,]$toj_judgement_side =  as.character( x[!x$correct_judgement,]$t1_loc )
+      x[x$correct_judgement,]$toj_judgement_side = ifelse(x[x$correct_judgement,]$t1_loc == "LEFT", "RIGHT", "LEFT")
+      x$toj_judgement_side = as.factor(x$toj_judgement_side)
+      
+      x$left_first_TF[x$toj_judgement_side == "RIGHT"] = TRUE 
+      
+    } else {
+      print("What is the toj_judgement_type? It is not 'first' or 'second'.")
+    }
+    return(x)
+  }
+
+)
+
 
 
 ### SOAs 
@@ -157,7 +172,7 @@ toj_means_by_id_by_condition = ddply(
   , .variables = .(id,block_bias, soa2)
   , .fun = function(x){
     to_return = data.frame(
-      value = mean(x$left_TF)
+      value = mean(x$left_first_TF)
     )
     return(to_return)
   }
@@ -182,33 +197,8 @@ ggplot(
     , method.args = list(family = "binomial")
     , formula = y ~ splines::ns(x,3)
     , se = FALSE
-  )
-
-
-
-toj_data_for_stan = list(
-	N = length(unique(toj_trials$id))
-	, L = nrow(toj_trials)
-	, y = as.numeric(toj_trials$left_TF)
-	, x = (as.numeric(toj_trials$soa2))/250  # we normalize soas, and therefore pss
-	, id = as.numeric(factor(toj_trials$id))
-	, condition = ifelse(toj_trials$block_bias == "RIGHT",-1,1)
-)
-
-library(rstan)
-toj_model = stan_model(
-	file = './EndogenousVisualPriorEntry-BayesianHierarchicalModel/FollowUp/FollowUptoj.stan'
-)
-
-toj_post = sampling(
-	object = toj_model
-	, data = toj_data_for_stan
-	, iter = 1e2
-	, chains = 1
-	, pars = 'trial_prob'
-	, include = FALSE
-)
-print(toj_post)
+  )+
+  theme(legend.position = "none")  # to be blind to the condition 
 
 
 
@@ -239,32 +229,71 @@ hist(color_trials$p_minus_j,br=100)
 color_trials$attended = FALSE
 color_trials$attended[ (color_trials$block_bias == "LEFT" & color_trials$probe_loc == "LEFT") | (color_trials$block_bias == "RIGHT" & color_trials$probe_loc == "RIGHT")] = TRUE
 
-color_data_for_stan = list(
-	N = length(unique(color_trials$id))
-	, L = nrow(color_trials)
-	, unit = as.numeric(factor(color_trials$id))
-	, condition = as.numeric(as.factor(color_trials$attended))
-	, y = pi+degree_to_rad(color_trials$p_minus_j)  # want from 0 to 360 instead of -180 to 180
+# mixture model - rho and kappa by participant
+source("../fit_uvm.R")
+color_trials$color_diff_radians = color_trials$p_minus_j*pi/180
+fitted_all = ddply(
+  .data = color_trials
+  , .variables = .(id)
+  , .fun = function(piece_of_df){
+    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
+    to_return = data.frame(
+      kappa_prime = fit$kappa_prime
+      , rho = fit$rho
+    )
+    return(to_return)
+  }
+  , .progress = 'time'
 )
 
-color_model = stan_model(file='./EndogenousVisualPriorEntry-BayesianHierarchicalModel/FollowUp/FollowUpcolor.stan')
-color_post <- sampling(
-	object = color_model
-	, data = color_data_for_stan
-	, iter = 1e2
-	, chains = 1
-	, cores = 1
-	, pars = c( 
-		'logitRhoMean'
-		,'logKappaMean'
-		,'logitRhoEffectMean'
-		,'logKappaEffectMean'
-		,'zlogitRhoSD'
-		,'zlogKappaSD'
-		,'zlogitRhoEffectSD'
-		,'zlogKappaEffectSD'
-		, 'cors'
-		, 'betas'
-	)
+# how many participants are perfect across the board?
+perfection_count = sum(fitted_all$rho == 1)
+perfection_count
+perfection_rate = perfection_count/nrow(fitted_all)
+perfection_rate
+
+ggplot(
+  data = fitted_all
+  , mapping = aes(rho)  #, fill = attended)
+)+ 
+  geom_histogram(bins = 50)+
+  labs(x = "Probability of Memory", y = "Frequency")+
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1))
+
+
+
+#### Stan ####
+toj_color_data_for_stan = list(
+  N_toj = length(unique(toj_trials$id))
+  , L_toj = nrow(toj_trials)
+  , y_toj = as.numeric(toj_trials$left_first_TF)  
+  , x_toj = (as.numeric(toj_trials$soa2))/250  # we normalize soas, and therefore pss
+  , id_toj = as.numeric(factor(toj_trials$id))
+  , condition_toj = ifelse(toj_trials$block_bias=="RIGHT",-1,1)  # RIGHT is -1 and LEFT is +1
+  , N_color = length(unique(color_trials$id))
+  , L_color = nrow(color_trials)
+  , unit_color = as.numeric(factor(color_trials$id))
+  , condition_color = as.numeric(as.factor(color_trials$attended)) # TRUE is 2, FALSE is 1 
+  , y_color = pi+degree_to_rad(color_trials$p_minus_j)  # want from 0 to 360 instead of -180 to 180
 )
-print(color_post)
+
+toj_color_model = stan_model(
+  file = '../EndogenousVisualPriorEntry-BayesianHierarchicalModel/toj_color.stan'
+)
+
+toj_color_post = sampling(
+  object = toj_color_model
+  , data = toj_color_data_for_stan
+  , iter = 1e2
+  , chains = 1
+  , cores = 1
+  , pars = c('trial_prob', 'p'
+             ,'population_pss_effect_mean'
+             , 'population_logjnd_effect_mean'
+             , 'logitRhoEffectMean'
+             , 'logKappaEffectMean')  # blind to the effects as I collect data
+  , include = FALSE
+)
+print(toj_color_post)
