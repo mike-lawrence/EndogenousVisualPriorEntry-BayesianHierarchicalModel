@@ -2,6 +2,7 @@
 library(plyr)
 library(ggplot2)
 library(grid)
+library(rstan)
 
 
 
@@ -124,6 +125,32 @@ a = a[!(a$id %in% toss),]
 
 length(unique(a$id))
 
+### add at 'tie goes to runner' summary
+a$know_tie_goes_runner = FALSE
+a[a$id == "alpha 4 2015-02-04 13:52:56"
+  | a$id == "alpha 8 2015-02-09 13:38:03"
+  | a$id == "alpha 15 2015-02-10 17:07:37"
+  | a$id == "delta 3 2014-12-03 09:03:59"
+  | a$id == "delta 4 2014-12-03 10:11:45"
+  | a$id == "delta 5 2014-12-04 10:10:39"
+  | a$id == "delta 6 2014-12-04 11:07:22"
+  | a$id == "delta 11 2014-12-05 09:58:42"
+  | a$id == "delta 14 2014-12-05 13:04:02"
+  | a$id == "delta 26 2014-12-10 15:18:43"
+  | a$id == "delta 28 2015-02-02 13:41:26"
+  | a$id == "delta 29 2015-02-02 14:42:42",]$know_tie_goes_runner = TRUE
+
+a$use_tie_goes_runner = FALSE
+a[a$id == "alpha 4 2015-02-04 13:52:56"
+  | a$id == "alpha 15 2015-02-10 17:07:37"
+  | a$id == "delta 3 2014-12-03 09:03:59"
+  | a$id == "delta 4 2014-12-03 10:11:45"
+  | a$id == "delta 5 2014-12-04 10:10:39"
+  | a$id == "delta 6 2014-12-04 11:07:22"
+  | a$id == "delta 14 2014-12-05 13:04:02"
+  | a$id == "delta 28 2015-02-02 13:41:26"
+  | a$id == "delta 29 2015-02-02 14:42:42",]$use_tie_goes_runner = TRUE
+
 
 
 
@@ -184,10 +211,43 @@ ggplot(
   ) +
   geom_point()
 
+### compare tie goes to runner with not 
+toj_means_by_id_by_convention = ddply(
+  .data = toj_trials
+  , .variables = .(base_probe_dist, soa2, know_tie_goes_runner)
+  , .fun = function(x){
+    to_return = data.frame(
+      value = mean(x$safe)
+    )
+    return(to_return)
+  }
+)
+toj_means_by_id_by_condition$soa2 = as.numeric(as.character(toj_means_by_id_by_condition$soa2))
+
+ggplot(
+  data = toj_means_by_id_by_convention
+  , mapping = aes(
+    x = soa2
+    , y =  value
+    , shape = base_probe_dist
+    , linetype = base_probe_dist
+    , group = base_probe_dist
+  )
+)+
+  facet_wrap(
+    ~ know_tie_goes_runner
+  )+
+  geom_smooth(
+    method = "glm"
+    , method.args = list(family = binomial(link="probit"))
+    , se = FALSE
+  ) +
+  geom_point()
+
 ### Get PSSs and JNDs
 toj_by_condition = ddply(
   .data = toj_trials
-  , .variables = .(id, base_probe_dist)  
+  , .variables = .(id, base_probe_dist, know_tie_goes_runner, use_tie_goes_runner)  
   , .fun = function(x){
     fit = glm(
       formula = safe~soa2
@@ -208,6 +268,7 @@ pss_means_by_condition = aggregate(pss ~ base_probe_dist, data = toj_by_conditio
 names(pss_means_by_condition)[1] = "attend"
 levels(pss_means_by_condition$attend) = c("glove", "base")
 pss_means_by_condition
+plot(toj_by_condition$pss) # sense of outliers
 
 jnd_means_by_condition = aggregate(jnd ~ base_probe_dist, data = toj_by_condition, FUN = mean) 
 names(jnd_means_by_condition)[1] = "attend"
@@ -215,6 +276,50 @@ levels(jnd_means_by_condition$attend) = c("glove", "base")
 jnd_means_by_condition
 plot(toj_by_condition$jnd)  # get a sense of outliers
 
+# look at 'tie goes to runner'
+# use MEDIAN because outlier
+pss_means_by_convention = aggregate(pss ~ base_probe_dist + know_tie_goes_runner, data = toj_by_condition, FUN = median) 
+names(pss_means_by_convention)[1] = "attend"
+levels(pss_means_by_convention$attend) = c("glove", "base")
+pss_means_by_convention
+ggplot(data = toj_by_condition
+       , aes(y=pss
+             , x =  know_tie_goes_runner
+             , colour =base_probe_dist
+             )
+       )+
+  stat_summary() # default to mean + se I think 
+
+jnd_means_by_convention = aggregate(jnd ~ base_probe_dist + know_tie_goes_runner, data = toj_by_condition, FUN = median) 
+names(jnd_means_by_convention)[1] = "attend"
+levels(jnd_means_by_convention$attend) = c("glove", "base")
+jnd_means_by_convention
+ggplot(data = toj_by_condition
+       , aes(y=jnd
+             , x =  know_tie_goes_runner
+             , colour =base_probe_dist
+       )
+)+
+  stat_summary() # default to mean + se I think 
+# No apparent interaction! Do not include, for simplicity
+
+# look at JND and PSS intercept scatter plot 
+# for attend glove
+pss_by_id_attend_glove = toj_by_condition[toj_by_condition$base_probe_dist == 0.2,]$pss
+jnd_by_id_attend_glove = toj_by_condition[toj_by_condition$base_probe_dist == 0.2,]$jnd
+plot(
+  pss_by_id_attend_glove
+  , jnd_by_id_attend_glove
+)
+abline(lm(jnd_by_id_attend_glove~pss_by_id_attend_glove))
+# for attend base
+pss_by_id_attend_base = toj_by_condition[toj_by_condition$base_probe_dist == 0.8,]$pss
+jnd_by_id_attend_base = toj_by_condition[toj_by_condition$base_probe_dist == 0.8,]$jnd
+plot(
+  pss_by_id_attend_base
+  , jnd_by_id_attend_base
+)
+abline(lm(jnd_by_id_attend_base~pss_by_id_attend_base))
 
 
 
@@ -327,19 +432,20 @@ toj_color_data_for_stan = list(
   , L_color = nrow(color_trials)
   , unit_color = as.numeric(factor(color_trials$id))
   , condition_color = as.numeric(as.factor(color_trials$attended)) # TRUE is 2, FALSE is 1 
+  , condition_convention = ifelse(aggregate(know_tie_goes_runner~id,data = toj_trials, FUN =unique)$know_tie_goes_runner, -1, 1) # know ('safe' bias) is -1...
   , y_color = pi+degree_to_rad(color_trials$color_diff)  # want from 0 to 360 instead of -180 to 180
 )
   
 toj_color_model = stan_model(
-  file = './EndogenousVisualPriorEntry-BayesianHierarchicalModel/toj_color.stan'
+  file = '../../EndogenousVisualPriorEntry-BayesianHierarchicalModel/Baseball/toj_color.stan'
 )
 
 toj_color_post = sampling(
   object = toj_color_model
   , data = toj_color_data_for_stan
-  , iter = 1e4
-  , chains = 8
-  , cores = 8
+  , iter = 1e2
+  , chains = 1
+  , cores = 1
   , pars = c('trial_prob', 'p')
   , include = FALSE
 )

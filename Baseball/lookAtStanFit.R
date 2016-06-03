@@ -127,6 +127,15 @@ ggs_autocorrelation(gg_toj_color_post, family =    "zpopulation_pss_intercept_sd
 
 ### Catepillar
 # good for examining correlations
+## ORDER:
+# (1) population_pss_intercept_mean        0.01  3923    1
+# (2) population_pss_effect_mean           0.03  9319    1
+# (3) population_logjnd_intercept_mean    -0.76  4043    1
+# (4) population_logjnd_effect_mean       -0.01 26292    1
+# (5) logitRhoMean                         4.35 11536    1
+# (6) logKappaMean                         2.62  5642    1
+# (7) logitRhoEffectMean                   1.09 17201    1
+# (8) logKappaEffectMean                   0.16 24019    1
 # NOTE: not HDIs per se
 ggs_caterpillar(gg_toj_color_post, family = "cor") + geom_vline(xintercept = 0, col = "red")
 
@@ -584,8 +593,8 @@ yBase = pnorm(
 )
 df = data.frame(SOA = -250:250, Prop = c(yGlove, yBase), Attend = c(rep("Glove",501), rep("Base", 501)))
 
-# stretch out picture
-ggplot(data = df, aes(y = Prop, x = SOA, colour = Attend))+
+
+gg = ggplot(data = df, aes(y = Prop, x = SOA, colour = Attend))+
   geom_line(size = 1.25)+
   # scale_color_manual("Attend", values = c("red", "blue"))+
   scale_color_hue("Attend", l = c(60, 15), c = c(100, 50), h = c(240, 360) ) +
@@ -593,6 +602,17 @@ ggplot(data = df, aes(y = Prop, x = SOA, colour = Attend))+
   theme_gray(base_size = 24)+
   theme(panel.grid.major = element_line(size = 1.5)
         ,panel.grid.minor = element_line(size = 1))
+  # define text to add
+  Text1 = textGrob(label = paste("Out"), gp = gpar(fontsize= 24))
+  Text2 = textGrob(label = paste("Safe"), gp = gpar(fontsize= 24)) 
+  gg = gg+
+  annotation_custom(grob = Text1,  xmin = -200, xmax = -200, ymin = -0.11, ymax = -0.11)+
+  annotation_custom(grob = Text2,  xmin = 200, xmax = 200, ymin = -0.11, ymax = -0.11)
+  # Code to override clipping
+  gg2 <- ggplot_gtable(ggplot_build(gg))
+  gg2$layout$clip[gg2$layout$name=="panel"] <- "off"
+  grid.draw(gg2)
+
 
 
 

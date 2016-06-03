@@ -9,6 +9,7 @@ data{
   int<lower=0> L_color;                         
   int<lower=0> unit_color[L_color];                 
   int<lower=1,upper=2> condition_color[L_color];    
+  int condition_convention[N_toj];
   real<lower=0,upper=2*pi()> y_color[L_color];      
 }
 transformed data{
@@ -23,8 +24,10 @@ parameters{
 	//population means
 	real population_pss_intercept_mean ;
 	real population_pss_effect_mean ; 
+	real population_pss_convention_effect_mean;
 	real population_logjnd_intercept_mean ;
 	real population_logjnd_effect_mean ;
+	real population_logjnd_convention_effect_mean; 
 	//population sds
 	real<lower=0,upper=pi()/2> zpopulation_pss_intercept_sd ;
 	real<lower=0,upper=pi()/2> zpopulation_pss_effect_sd ; 
@@ -84,14 +87,14 @@ transformed parameters{
 		population_logjnd_intercept_sd <- tan(zpopulation_logjnd_intercept_sd);
 		population_logjnd_effect_sd <- tan(zpopulation_logjnd_effect_sd) ;
 		for(this_id in 1:N_toj){
-			pss_intercept_per_id[this_id] <- beta[this_id,1]*population_pss_intercept_sd + population_pss_intercept_mean ;
-			pss_effect_per_id[this_id] <- beta[this_id,2]*population_pss_effect_sd + population_pss_effect_mean ;
-			logjnd_intercept_per_id[this_id] <- beta[this_id,3]*population_logjnd_intercept_sd + population_logjnd_intercept_mean ;
-			logjnd_effect_per_id[this_id] <- beta[this_id,4]*population_logjnd_effect_sd + population_logjnd_effect_mean ;
+			pss_intercept_per_id[this_id] <- beta[this_id,1]*population_pss_intercept_sd + population_pss_intercept_mean + population_pss_convention_effect_mean*condition_convention[this_id]/2 ;
+			pss_effect_per_id[this_id] <- beta[this_id,2]*population_pss_effect_sd + population_pss_effect_mean/2 ;
+			logjnd_intercept_per_id[this_id] <- beta[this_id,3]*population_logjnd_intercept_sd + population_logjnd_intercept_mean + population_logjnd_convention_effect_mean*condition_convention[this_id]/2 ;
+			logjnd_effect_per_id[this_id] <- beta[this_id,4]*population_logjnd_effect_sd + population_logjnd_effect_mean/2 ;
 		}
 		for(this_obs in 1:L_toj){
 			trial_pss[this_obs] <- pss_intercept_per_id[id_toj[this_obs]] + pss_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs] ;  // glove, RIGHT is -1... base, LEFT is +1 
-			trial_logjnd[this_obs] <- logjnd_intercept_per_id[id_toj[this_obs]] + logjnd_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs] ; // glove, RIGHT is -1... base, LEFT is +1 
+			trial_logjnd[this_obs] <- logjnd_intercept_per_id[id_toj[this_obs]] + logjnd_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs]; // glove, RIGHT is -1... base, LEFT is +1 
 			trial_prob[this_obs] <- Phi_approx((x_toj[this_obs]-trial_pss[this_obs])/exp(trial_logjnd[this_obs])) ;
 		}
 		
@@ -127,8 +130,10 @@ transformed parameters{
 model{
 	population_pss_intercept_mean ~ normal(0,1) ;
 	population_pss_effect_mean ~ normal(0,1) ;
+	population_pss_convention_effect_mean ~ normal(0,1) ;
 	population_logjnd_intercept_mean ~ normal(-1,.5) ;
 	population_logjnd_effect_mean ~ normal(0,1) ;
+	population_logjnd_convention_effect_mean ~ normal(0,1) ;
 
   //set priors on population parameters
   logitRhoMean ~ normal(3,3);
