@@ -2,6 +2,7 @@
 library(plyr)
 library(ggplot2)
 library(grid)
+library(rstan)
 
 
 
@@ -125,6 +126,11 @@ a = a[!(a$id %in% toss),]
 length(unique(a$id))
 
 
+# get rid of delta 8 because psychometric function
+a = a[a$id != "delta 8 2014-12-04 14:23:37",]
+
+length(unique(a$id))
+
 
 
 #### TOJ ####
@@ -239,7 +245,7 @@ toj_color_post = sampling(
   , include = FALSE
 )
 print(toj_color_post)
-save(toj_color_post, file = "toj_color_post_May11th2016")
+save(toj_color_post, file = "toj_color_post_May14th2016")
 
 
 
