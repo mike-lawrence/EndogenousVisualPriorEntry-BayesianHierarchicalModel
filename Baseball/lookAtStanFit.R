@@ -21,8 +21,10 @@ ggs_histogram(gg_toj_color_post, family = "logitRhoMean")
 ggs_histogram(gg_toj_color_post, family = "logKappaEffectMean")
 ggs_histogram(gg_toj_color_post, family =  "logKappaMean" )
 ggs_histogram(gg_toj_color_post, family =  "population_logjnd_effect_mean" )
+ggs_histogram(gg_toj_color_post, family =  "population_logjnd_convention_effect_mean" )
 ggs_histogram(gg_toj_color_post, family =  "population_logjnd_intercept_mean" )
 ggs_histogram(gg_toj_color_post, family =  "population_pss_effect_mean" )
+ggs_histogram(gg_toj_color_post, family =  "population_pss_convention_effect_mean" )
 ggs_histogram(gg_toj_color_post, family =   "population_pss_intercept_mean"  )
 ggs_histogram(gg_toj_color_post, family =   "zlogitRhoEffectSD"  )
 ggs_histogram(gg_toj_color_post, family =    "zlogitRhoSD"   )
@@ -39,8 +41,10 @@ ggs_density(gg_toj_color_post, family = "logitRhoMean")
 ggs_density(gg_toj_color_post, family = "logKappaEffectMean")
 ggs_density(gg_toj_color_post, family =  "logKappaMean" )
 ggs_density(gg_toj_color_post, family =  "population_logjnd_effect_mean" )
+ggs_density(gg_toj_color_post, family =  "population_logjnd_convention_effect_mean" )
 ggs_density(gg_toj_color_post, family =  "population_logjnd_intercept_mean" )
 ggs_density(gg_toj_color_post, family =  "population_pss_effect_mean" )
+ggs_density(gg_toj_color_post, family =  "population_pss_convention_effect_mean" )
 ggs_density(gg_toj_color_post, family =   "population_pss_intercept_mean"  )
 ggs_density(gg_toj_color_post, family =   "zlogitRhoEffectSD"  )
 ggs_density(gg_toj_color_post, family =    "zlogitRhoSD"   )
@@ -57,8 +61,10 @@ ggs_traceplot(gg_toj_color_post, family = "logitRhoMean")
 ggs_traceplot(gg_toj_color_post, family = "logKappaEffectMean")
 ggs_traceplot(gg_toj_color_post, family =  "logKappaMean" )
 ggs_traceplot(gg_toj_color_post, family =  "population_logjnd_effect_mean" )
+ggs_traceplot(gg_toj_color_post, family =  "population_logjnd_convention_effect_mean" )
 ggs_traceplot(gg_toj_color_post, family =  "population_logjnd_intercept_mean" )
 ggs_traceplot(gg_toj_color_post, family =  "population_pss_effect_mean" )
+ggs_traceplot(gg_toj_color_post, family =  "population_pss_convention_effect_mean" )
 ggs_traceplot(gg_toj_color_post, family =   "population_pss_intercept_mean"  )
 ggs_traceplot(gg_toj_color_post, family =   "zlogitRhoEffectSD"  )
 ggs_traceplot(gg_toj_color_post, family =    "zlogitRhoSD"   )
@@ -75,8 +81,10 @@ ggs_running(gg_toj_color_post, family = "logitRhoMean")
 ggs_running(gg_toj_color_post, family = "logKappaEffectMean")
 ggs_running(gg_toj_color_post, family =  "logKappaMean" )
 ggs_running(gg_toj_color_post, family =  "population_logjnd_effect_mean" )
+ggs_running(gg_toj_color_post, family =  "population_logjnd_convention_effect_mean" )
 ggs_running(gg_toj_color_post, family =  "population_logjnd_intercept_mean" )
 ggs_running(gg_toj_color_post, family =  "population_pss_effect_mean" )
+ggs_running(gg_toj_color_post, family =  "population_pss_convention_effect_mean" )
 ggs_running(gg_toj_color_post, family =   "population_pss_intercept_mean"  )
 ggs_running(gg_toj_color_post, family =   "zlogitRhoEffectSD"  )
 ggs_running(gg_toj_color_post, family =    "zlogitRhoSD"   )
@@ -93,8 +101,10 @@ ggs_compare_partial(gg_toj_color_post, family = "logitRhoMean")
 ggs_compare_partial(gg_toj_color_post, family = "logKappaEffectMean")
 ggs_compare_partial(gg_toj_color_post, family =  "logKappaMean" )
 ggs_compare_partial(gg_toj_color_post, family =  "population_logjnd_effect_mean" )
+ggs_compare_partial(gg_toj_color_post, family =  "population_logjnd_convention_effect_mean" )
 ggs_compare_partial(gg_toj_color_post, family =  "population_logjnd_intercept_mean" )
 ggs_compare_partial(gg_toj_color_post, family =  "population_pss_effect_mean" )
+ggs_compare_partial(gg_toj_color_post, family =  "population_pss_convention_effect_mean" )
 ggs_compare_partial(gg_toj_color_post, family =   "population_pss_intercept_mean"  )
 ggs_compare_partial(gg_toj_color_post, family =   "zlogitRhoEffectSD"  )
 ggs_compare_partial(gg_toj_color_post, family =    "zlogitRhoSD"   )
@@ -113,8 +123,10 @@ ggs_autocorrelation(gg_toj_color_post, family = "logitRhoMean")
 ggs_autocorrelation(gg_toj_color_post, family = "logKappaEffectMean")
 ggs_autocorrelation(gg_toj_color_post, family =  "logKappaMean" )
 ggs_autocorrelation(gg_toj_color_post, family =  "population_logjnd_effect_mean" )
+ggs_autocorrelation(gg_toj_color_post, family =  "population_logjnd_convention_effect_mean" )
 ggs_autocorrelation(gg_toj_color_post, family =  "population_logjnd_intercept_mean" )
 ggs_autocorrelation(gg_toj_color_post, family =  "population_pss_effect_mean" )
+ggs_autocorrelation(gg_toj_color_post, family =  "population_pss_convention_effect_mean" )
 ggs_autocorrelation(gg_toj_color_post, family =   "population_pss_intercept_mean"  )
 ggs_autocorrelation(gg_toj_color_post, family =   "zlogitRhoEffectSD"  )
 ggs_autocorrelation(gg_toj_color_post, family =    "zlogitRhoSD"   )
@@ -128,14 +140,14 @@ ggs_autocorrelation(gg_toj_color_post, family =    "zpopulation_pss_intercept_sd
 ### Catepillar
 # good for examining correlations
 ## ORDER:
-# (1) population_pss_intercept_mean        0.01  3923    1
-# (2) population_pss_effect_mean           0.03  9319    1
-# (3) population_logjnd_intercept_mean    -0.76  4043    1
-# (4) population_logjnd_effect_mean       -0.01 26292    1
-# (5) logitRhoMean                         4.35 11536    1
-# (6) logKappaMean                         2.62  5642    1
-# (7) logitRhoEffectMean                   1.09 17201    1
-# (8) logKappaEffectMean                   0.16 24019    1
+# (1) population_pss_intercept_mean      
+# (2) population_pss_effect_mean          
+# (3) population_logjnd_intercept_mean    
+# (4) population_logjnd_effect_mean     
+# (5) logitRhoMean                         
+# (6) logKappaMean                        
+# (7) logitRhoEffectMean                 
+# (8) logKappaEffectMean                   
 # NOTE: not HDIs per se
 ggs_caterpillar(gg_toj_color_post, family = "cor") + geom_vline(xintercept = 0, col = "red")
 
@@ -145,64 +157,119 @@ ggs_caterpillar(gg_toj_color_post, family = "cor") + geom_vline(xintercept = 0, 
 ### TOJ actual data
 load("toj_trials.Rdata")
 real_toj = aggregate(safe ~ soa2 + base_probe_dist, data = toj_trials, FUN = mean)
+real_toj_convention = aggregate(safe ~ soa2 + know_tie_goes_runner, data = toj_trials, FUN = mean)
 
 ### TOJ simulated data
 # pss intercept mean
 pss_intercept_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_pss_intercept_mean",]$value
 # pss effect mean
 pss_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_pss_effect_mean",]$value
+# pss convention effect mean
+pss_convention_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_pss_convention_effect_mean",]$value
 
 # pss glove 
 pss_glove_mean = (pss_intercept_mean - pss_effect_mean) * 250
 hist(pss_glove_mean, breaks = 10, col = rgb(.1,.1,.1,.5), freq = F, xlim = c(min(pss_glove_mean), max(pss_glove_mean)))
 # sample from posterior  
-pss_glove_mean_reps = sample(pss_glove_mean, 50)
+pss_glove_mean_reps = sample(pss_glove_mean, 50, replace = T)
 hist(pss_glove_mean_reps, breaks = 10, col = rgb(.9,.9,.9,.5), freq = F, xlim = c(min(pss_glove_mean), max(pss_glove_mean)), add = T)
 
 # pss base
 pss_base_mean = (pss_intercept_mean + pss_effect_mean) * 250
 hist(pss_base_mean, breaks = 10, col = rgb(.1,.1,.1,.5), freq = F, xlim = c(min(pss_base_mean), max(pss_base_mean)))
 # sample from posterior  
-pss_base_mean_reps = sample(pss_base_mean, 50)
+pss_base_mean_reps = sample(pss_base_mean, 50, replace = T)
 hist(pss_base_mean_reps, breaks = 10, col = rgb(.9,.9,.9,.5), freq = F, xlim = c(min(pss_base_mean), max(pss_base_mean)), add = T)
+
+# pss TRUE convention
+pss_know_mean = (pss_intercept_mean - pss_convention_effect_mean/2) * 250
+hist(pss_know_mean, breaks = 10, col = rgb(.1,.1,.1,.5), freq = F, xlim = c(min(pss_know_mean), max(pss_know_mean)))
+# sample from posterior  
+pss_know_mean_reps = sample(pss_know_mean, 50, replace = T)
+hist(pss_know_mean_reps, breaks = 10, col = rgb(.9,.9,.9,.5), freq = F, xlim = c(min(pss_know_mean), max(pss_know_mean)), add = T)
+
+# pss FALSE convention
+pss_dontknow_mean = (pss_intercept_mean + pss_convention_effect_mean/2) * 250
+hist(pss_dontknow_mean, breaks = 10, col = rgb(.1,.1,.1,.5), freq = F, xlim = c(min(pss_dontknow_mean), max(pss_dontknow_mean)))
+# sample from posterior  
+pss_dontknow_mean_reps = sample(pss_dontknow_mean, 50, replace = T)
+hist(pss_dontknow_mean_reps, breaks = 10, col = rgb(.9,.9,.9,.5), freq = F, xlim = c(min(pss_dontknow_mean), max(pss_dontknow_mean)), add = T)
+
 
 # jnd intercept mean
 jnd_intercept_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_logjnd_intercept_mean",]$value
 # jnd effect mean
 jnd_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_logjnd_effect_mean",]$value
+# jnd convention effect mean
+jnd_convention_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_logjnd_convention_effect_mean",]$value
 
 # jnd glove
 jnd_glove_mean = exp( jnd_intercept_mean - jnd_effect_mean ) * 250
 hist(jnd_glove_mean, breaks = 10, col = rgb(.1,.1,.1,.5), freq = F, xlim = c(min(jnd_glove_mean), max(jnd_glove_mean)))
 # sample from posterior  
-jnd_glove_mean_reps = sample(jnd_glove_mean, 50)
+jnd_glove_mean_reps = sample(jnd_glove_mean, 50, replace = T)
 hist(jnd_glove_mean_reps, breaks = 10, col = rgb(.9,.9,.9,.5), freq = F, xlim = c(min(jnd_glove_mean), max(jnd_glove_mean)), add=T)
 
 # jnd base
 jnd_base_mean = exp( jnd_intercept_mean + jnd_effect_mean ) * 250
 hist(jnd_base_mean, breaks = 10, col = rgb(.1,.1,.1,.5), freq = F, xlim = c(min(jnd_base_mean), max(jnd_base_mean)))
 # sample from posterior  
-jnd_base_mean_reps = sample(jnd_base_mean, 50)
+jnd_base_mean_reps = sample(jnd_base_mean, 50, replace = T)
 hist(jnd_base_mean_reps, breaks = 10, col = rgb(.9,.9,.9,.5), freq = F, xlim = c(min(jnd_base_mean), max(jnd_base_mean)), add=T)
 
+# jnd TRUE convention
+jnd_know_mean = exp( jnd_intercept_mean - jnd_convention_effect_mean/2 ) * 250
+hist(jnd_know_mean, breaks = 10, col = rgb(.1,.1,.1,.5), freq = F, xlim = c(min(jnd_know_mean), max(jnd_know_mean)))
+# sample from posterior  
+jnd_know_mean_reps = sample(jnd_know_mean, 50, replace = T)
+hist(jnd_know_mean_reps, breaks = 10, col = rgb(.9,.9,.9,.5), freq = F, xlim = c(min(jnd_know_mean), max(jnd_know_mean)), add=T)
+
+# jnd FALSE convention
+jnd_dontknow_mean = exp( jnd_intercept_mean + jnd_convention_effect_mean/2 ) * 250
+hist(jnd_dontknow_mean, breaks = 10, col = rgb(.1,.1,.1,.5), freq = F, xlim = c(min(jnd_dontknow_mean), max(jnd_dontknow_mean)))
+# sample from posterior  
+jnd_dontknow_mean_reps = sample(jnd_dontknow_mean, 50, replace = T)
+hist(jnd_dontknow_mean_reps, breaks = 10, col = rgb(.9,.9,.9,.5), freq = F, xlim = c(min(jnd_dontknow_mean), max(jnd_dontknow_mean)), add=T)
+
+
 ### draw psychometric functions
+SOAs = c(-250, -150, -100, -50, -17, 17, 50, 100, 150, 250)
 # base
-plot( pnorm( c(-250, -150, -100, -50, -17, 17, 50, 100, 150, 250), mean = pss_base_mean_reps[1], sd = jnd_base_mean_reps[1]), main = "safe proportion", col = alpha("turquoise", 0.5) )
+plot(SOAs, pnorm( SOAs, mean = pss_base_mean_reps[1], sd = jnd_base_mean_reps[1]), main = "attend base", ylab = "safe proportion", xlab = "SOA" , col = alpha("turquoise", 0.5) )
 for (i in 2:length(pss_base_mean_reps)) {
-  points( pnorm( c(-250, -150, -100, -50, -17, 17, 50, 100, 150, 250), mean = pss_base_mean_reps[i], sd = jnd_base_mean_reps[i]), col = alpha("turquoise", 0.5) )
+  points(SOAs, pnorm( SOAs, mean = pss_base_mean_reps[i], sd = jnd_base_mean_reps[i]), col = alpha("turquoise", 0.5) )
 }
 # real base
 real_base = real_toj[real_toj$base_probe_dist == 0.8,]$safe
-points(real_base, col = "blue", pch = 15 )
+points(SOAs,real_base, col = "blue", pch = 15 )
 
 # glove
-plot( pnorm( c(-250, -150, -100, -50, -17, 17, 50, 100, 150, 250), mean = pss_base_mean_reps[1], sd = jnd_base_mean_reps[1]), main = "safe proportion", col = alpha("pink", 0.5)  )
+plot(SOAs, pnorm( SOAs, mean = pss_base_mean_reps[1], sd = jnd_base_mean_reps[1]), main = "attend glove", ylab = "safe proportion", xlab = "SOA", col = alpha("pink", 0.5)  )
 for (i in 2:length(pss_glove_mean_reps)) {
-  points( pnorm( c(-250, -150, -100, -50, -17, 17, 50, 100, 150, 250), mean = pss_glove_mean_reps[i], sd = jnd_glove_mean_reps[i]), col = alpha("pink", 0.5)   )
+  points(SOAs, pnorm( SOAs, mean = pss_glove_mean_reps[i], sd = jnd_glove_mean_reps[i]), col = alpha("pink", 0.5)   )
 }
 # real glove
 real_glove = real_toj[real_toj$base_probe_dist == 0.2,]$safe
-points(real_base, col = "red", pch = 15)
+points(SOAs, real_base, col = "red", pch = 15)
+
+# TRUE convention
+plot(SOAs, pnorm( SOAs, mean = pss_know_mean_reps[1], sd = jnd_know_mean_reps[1]), main = "know convention", ylab = "safe proportion", xlab = "SOA", col = alpha("turquoise", 0.5) )
+for (i in 2:length(pss_know_mean_reps)) {
+  points(SOAs, pnorm(SOAs, mean = pss_know_mean_reps[i], sd = jnd_know_mean_reps[i]), ylab = "safe proportion", xlab = "SOA", col = alpha("turquoise", 0.5) )
+}
+# real base
+real_know = real_toj_convention[real_toj_convention$know_tie_goes_runner == TRUE,]$safe
+points(SOAs,real_know, col = "blue", pch = 15 )
+
+# FALSE convention
+plot( SOAs, pnorm( SOAs, mean = pss_dontknow_mean_reps[1], sd = jnd_dontknow_mean_reps[1]), main = "don't know convention", ylab = "safe proportion", xlab = "SOA", col = alpha("pink", 0.5) )
+for (i in 2:length(pss_dontknow_mean_reps)) {
+  points( SOAs, pnorm( SOAs, mean = pss_dontknow_mean_reps[i], sd = jnd_dontknow_mean_reps[i]), col = alpha("pink", 0.5) )
+}
+# real base
+real_dontknow = real_toj_convention[real_toj_convention$know_tie_goes_runner == FALSE,]$safe
+points(SOAs,real_dontknow, col = "red", pch = 15 )
+
 
 ### Color actual data
 load("color_trials.Rdata")
@@ -220,14 +287,14 @@ rho_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "logitRhoEffe
 rho_attend = plogis(rho_intercept_mean + rho_effect_mean/2)
 hist(rho_attend, breaks = 10, freq = F, col = rgb(.1,.1,.1,.5))
 # sample from posterior 
-rho_attend_reps = sample(rho_attend, 50)
+rho_attend_reps = sample(rho_attend, 50, replace = T)
 hist(rho_attend_reps, breaks = 10, freq = F, col = rgb(.9,.9,.9,.5), add = T)
 
 # rho unattend
 rho_unattend = plogis(rho_intercept_mean - rho_effect_mean/2)
 hist(rho_unattend, breaks = 10, freq = F, col = rgb(.1,.1,.1,.5))
 # sample from posterior 
-rho_unattend_reps = sample(rho_unattend, 50)
+rho_unattend_reps = sample(rho_unattend, 50, replace = T)
 hist(rho_unattend_reps, breaks = 10, freq = F, col = rgb(.9,.9,.9,.5), add = T)
 
 # kappa intercept mean 
@@ -239,26 +306,28 @@ kappa_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "logKappaEf
 kappa_attend = exp(kappa_intercept_mean + kappa_effect_mean/2)
 hist(kappa_attend, breaks = 10, freq = F, col = rgb(.1,.1,.1,.5))
 # sample from posterior 
-kappa_attend_reps = sample(kappa_attend, 50)
+kappa_attend_reps = sample(kappa_attend, 50, replace = T)
 hist(kappa_attend_reps, breaks = 10, freq = F, col = rgb(.9,.9,.9,.5), add = T)
 
 # kappa unattend
 kappa_unattend = exp(kappa_intercept_mean - kappa_effect_mean/2)
 hist(kappa_unattend, breaks = 10, freq = F, col = rgb(.1,.1,.1,.5))
 # sample from posterior 
-kappa_unattend_reps = sample(kappa_unattend, 50)
+kappa_unattend_reps = sample(kappa_unattend, 50, replace = T)
 hist(kappa_unattend_reps, breaks = 10, freq = F, col = rgb(.9,.9,.9,.5), add = T)
 
 ### draw from distributions
 # look at mixture model
-plot( (rho_unattend_reps[1])*dvm(seq(-pi, pi, pi/200), 0, kappa_unattend_reps[1]) 
-      + (1-rho_unattend_reps[1]) * dunif(seq(-pi, pi, pi/200), -pi, pi) )
+plot( seq(-pi, pi, pi/200), (rho_unattend_reps[1])*dvm(seq(-pi, pi, pi/200), 0, kappa_unattend_reps[1]) 
+      + (1-rho_unattend_reps[1]) * dunif(seq(-pi, pi, pi/200), -pi, pi)
+      , xlab = "radian deviations", ylab = "density")
 
 # unattend
 # sample from distributions
 hist( 
   c( rvm(1000*(rho_unattend_reps[1]), pi, kappa_unattend_reps[1]) - pi , runif(1000*(1- rho_unattend_reps[1]), -pi, pi) )
-     , breaks = 50, col = rgb(.1,.1,.1,.1), xlim = c(-pi, pi), freq = F, ylim = c(0, 2))
+     , breaks = 50, col = rgb(.1,.1,.1,.1), xlim = c(-pi, pi), freq = F, ylim = c(0, 2)
+     , xlab = "radian deviations", main = "unattended")
 # cycle
 for (i in 2:length(kappa_unattend_reps)) {
   hist( 
@@ -271,7 +340,8 @@ hist(color_trials[color_trials$attended == FALSE,]$color_diff_radians, breaks = 
 # sample from distributions
 hist( 
   c( rvm(1000*(rho_attend_reps[1]), pi, kappa_attend_reps[1]) - pi , runif(1000*(1- rho_attend_reps[1]), -pi, pi) )
-  , breaks = 50, col = rgb(.1,.1,.1,.1), xlim = c(-pi, pi), freq = F, ylim = c(0, 2))
+  , breaks = 50, col = rgb(.1,.1,.1,.1), xlim = c(-pi, pi), freq = F, ylim = c(0, 2)
+  , xlab = "radian deviations", main = "attended")
 # cycle
 for (i in 2:length(kappa_attend_reps)) {
   hist( 
@@ -280,6 +350,131 @@ for (i in 2:length(kappa_attend_reps)) {
 }
 hist(color_trials[color_trials$attended == TRUE,]$color_diff_radians, breaks = 50, freq = F, col = rgb(.9,.9,.9,.5), add = T)
 
+### plot scatterplot of correlations
+# ~~~~ posterior check ~~~~
+# (1) population_pss_intercept_mean      
+# (2) population_pss_effect_mean          
+# (3) population_logjnd_intercept_mean    
+# (4) population_logjnd_effect_mean     
+# (5) logitRhoMean                         
+# (6) logKappaMean                        
+# (7) logitRhoEffectMean                 
+# (8) logKappaEffectMean 
+# JND and PSS intercepts
+betas2 = data.frame(value = ex_toj_color_post$beta)
+betas2$iteration = rownames(betas2)
+betas = melt( betas2 )
+betas$parameter = rep( c(
+  "population_pss_intercept_mean"      
+  , "population_pss_effect_mean"          
+  , "population_logjnd_intercept_mean"    
+  , "population_logjnd_effect_mean"     
+  , "logitRhoMean"                       
+  , "logKappaMean"                       
+  , "logitRhoEffectMean"                 
+  , "logKappaEffectMean"
+)
+, times = 1
+, each = nrow(betas2)*length(unique(betas$variable))/8  # 8 is number of parameters 
+)  
+betas$participant = rep(c(1:45), times = 8, each = nrow(betas2))
+
+
+pssmean2 = data.frame(value = ex_toj_color_post$population_pss_intercept_mean)
+pssmean2$iteration = rownames(pssmean2)
+pssmean = melt( pssmean2 )$value
+pssmean_reps = sample(pssmean, 50, replace = T)
+
+psssd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_pss_intercept_sd))
+psssd2$iteration = rownames(psssd2)
+psssd = melt( psssd2 )$value
+psssd_reps = sample(psssd, 50, replace = T)
+
+pssconventioneffect2 = data.frame(value = ex_toj_color_post$population_pss_convention_effect_mean)
+pssconventioneffect2$iteration = rownames(pssconventioneffect2)
+pssconventioneffect = melt( pssconventioneffect2 )$value
+pssconventioneffect_reps = sample(pssconventioneffect, 50, replace = T)
+conventionfactor = ifelse(aggregate(know_tie_goes_runner~id,data = toj_trials, FUN =unique)$know_tie_goes_runner, -1, 1)
+
+# cycle through each participant 
+pss_per_id = ddply(
+  .data = betas
+  , .variables = .(participant)
+  , .fun = function(x){
+    i = unique(x$participant)
+    pssintercept = pssmean_reps + pssconventioneffect_reps*conventionfactor[i]/2 + psssd_reps*x[x$parameter == "population_pss_intercept_mean",]$value
+    df = data.frame(pssintercept)*250
+    return(df)
+  }
+)
+
+logjndmean2 = data.frame(value = ex_toj_color_post$population_logjnd_intercept_mean)
+logjndmean2$iteration = rownames(logjndmean2)
+logjndmean = melt( logjndmean2 )$value
+logjndmean_reps = sample(logjndmean, 50, replace = T)
+
+logjndsd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_logjnd_intercept_sd))
+logjndsd2$iteration = rownames(logjndsd2)
+logjndsd = melt( logjndsd2 )$value
+logjndsd_reps = sample(logjndsd, 50, replace = T)
+
+logjndconventioneffect2 = data.frame(value = ex_toj_color_post$population_logjnd_convention_effect_mean)
+logjndconventioneffect2$iteration = rownames(logjndconventioneffect2)
+logjndconventioneffect = melt( logjndconventioneffect2 )$value
+logjndconventioneffect_reps = sample(logjndconventioneffect, 50, replace = T)
+
+conventionfactor = ifelse(aggregate(know_tie_goes_runner~id,data = toj_trials, FUN =unique)$know_tie_goes_runner, -1, 1)
+
+jnd_per_id = ddply(
+  .data = betas
+  , .variables = .(participant)
+  , .fun = function(x){
+    i = unique(x$participant)
+    logjndintercept = logjndmean_reps + logjndconventioneffect_reps*conventionfactor[i]/2 + logjndsd_reps*x[x$parameter == "population_logjnd_intercept_mean",]$value
+    df = exp(data.frame(logjndintercept))*250
+    names(df) = "jndintercept"
+    return(df)
+  }
+)
+
+# get line of best fit through median values 
+jnd_med_per_id = aggregate(jndintercept ~ participant, data = jnd_per_id, FUN = median)$jndintercept
+pss_med_per_id = aggregate(pssintercept ~ participant, data = pss_per_id, FUN = median)$pssintercept
+
+### Get REAL PSSs and JNDs
+toj_by_condition = ddply(
+  .data = toj_trials
+  , .variables = .(id)  
+  , .fun = function(x){
+    fit = glm(
+      formula = safe~soa2
+      , data = x
+      , family = binomial(link = "probit")
+    )
+    to_return = data.frame(
+      id = x$id[1]
+      , pss = -coef(fit)[1]/coef(fit)[2]
+      , jnd = (  (1-coef(fit)[1])/coef(fit)[2] -  (-1-coef(fit)[1])/coef(fit)[2] ) / 2  # unsure about this
+    )
+    return(to_return)
+  }
+)
+
+# plot posterior samples
+plot(pss_per_id$pssintercept, jnd_per_id$jndintercept, ylab = "jnd intercepts", xlab = "pss intercepts", col = alpha(pss_per_id$participant, 0.2) , ylim = c(0, 500) )
+abline(lm(jnd_med_per_id~pss_med_per_id), lty = 2)
+
+# look at JND and PSS intercept scatter plot 
+# for attend glove
+pss_by_id = toj_by_condition$pss
+jnd_by_id = toj_by_condition$jnd
+points(
+  pss_by_id
+  , jnd_by_id
+  , col = toj_by_condition$id
+  , pch = 20
+)
+abline(lm(jnd_by_id~pss_by_id))
 
 
 
@@ -291,6 +486,7 @@ toj_color_post
 plot(toj_color_post)
 
 # extract samples
+detach('package:rstan', unload = T)  # to ensure 
 library(rstan)
 ex_toj_color_post = extract(toj_color_post)
 
