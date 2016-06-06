@@ -151,7 +151,11 @@ a[a$id == "alpha 4 2015-02-04 13:52:56"
   | a$id == "delta 28 2015-02-02 13:41:26"
   | a$id == "delta 29 2015-02-02 14:42:42",]$use_tie_goes_runner = TRUE
 
+# get rid of delta 8 because flat psychometric function
+# REASON TO BELIEVE PARTICIPANT WAS NOT DOING THE TASK PROPERLY
+a= a[a$id != "delta 8 2014-12-04 14:23:37",]
 
+length(unique(a$id))
 
 
 #### TOJ ####

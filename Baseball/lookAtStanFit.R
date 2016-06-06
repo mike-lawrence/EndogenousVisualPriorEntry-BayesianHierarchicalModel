@@ -168,14 +168,14 @@ pss_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_p
 pss_convention_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_pss_convention_effect_mean",]$value
 
 # pss glove 
-pss_glove_mean = (pss_intercept_mean - pss_effect_mean) * 250
+pss_glove_mean = (pss_intercept_mean - pss_effect_mean/2) * 250
 hist(pss_glove_mean, breaks = 10, col = rgb(.1,.1,.1,.5), freq = F, xlim = c(min(pss_glove_mean), max(pss_glove_mean)))
 # sample from posterior  
 pss_glove_mean_reps = sample(pss_glove_mean, 50, replace = T)
 hist(pss_glove_mean_reps, breaks = 10, col = rgb(.9,.9,.9,.5), freq = F, xlim = c(min(pss_glove_mean), max(pss_glove_mean)), add = T)
 
 # pss base
-pss_base_mean = (pss_intercept_mean + pss_effect_mean) * 250
+pss_base_mean = (pss_intercept_mean + pss_effect_mean/2) * 250
 hist(pss_base_mean, breaks = 10, col = rgb(.1,.1,.1,.5), freq = F, xlim = c(min(pss_base_mean), max(pss_base_mean)))
 # sample from posterior  
 pss_base_mean_reps = sample(pss_base_mean, 50, replace = T)
@@ -204,14 +204,14 @@ jnd_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_l
 jnd_convention_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_logjnd_convention_effect_mean",]$value
 
 # jnd glove
-jnd_glove_mean = exp( jnd_intercept_mean - jnd_effect_mean ) * 250
+jnd_glove_mean = exp( jnd_intercept_mean - jnd_effect_mean/2 ) * 250
 hist(jnd_glove_mean, breaks = 10, col = rgb(.1,.1,.1,.5), freq = F, xlim = c(min(jnd_glove_mean), max(jnd_glove_mean)))
 # sample from posterior  
 jnd_glove_mean_reps = sample(jnd_glove_mean, 50, replace = T)
 hist(jnd_glove_mean_reps, breaks = 10, col = rgb(.9,.9,.9,.5), freq = F, xlim = c(min(jnd_glove_mean), max(jnd_glove_mean)), add=T)
 
 # jnd base
-jnd_base_mean = exp( jnd_intercept_mean + jnd_effect_mean ) * 250
+jnd_base_mean = exp( jnd_intercept_mean + jnd_effect_mean/2 ) * 250
 hist(jnd_base_mean, breaks = 10, col = rgb(.1,.1,.1,.5), freq = F, xlim = c(min(jnd_base_mean), max(jnd_base_mean)))
 # sample from posterior  
 jnd_base_mean_reps = sample(jnd_base_mean, 50, replace = T)
@@ -244,13 +244,13 @@ real_base = real_toj[real_toj$base_probe_dist == 0.8,]$safe
 points(SOAs,real_base, col = "blue", pch = 15 )
 
 # glove
-plot(SOAs, pnorm( SOAs, mean = pss_base_mean_reps[1], sd = jnd_base_mean_reps[1]), main = "attend glove", ylab = "safe proportion", xlab = "SOA", col = alpha("pink", 0.5)  )
+plot(SOAs, pnorm( SOAs, mean = pss_glove_mean_reps[1], sd = jnd_glove_mean_reps[1]), main = "attend glove", ylab = "safe proportion", xlab = "SOA", col = alpha("pink", 0.5)  )
 for (i in 2:length(pss_glove_mean_reps)) {
   points(SOAs, pnorm( SOAs, mean = pss_glove_mean_reps[i], sd = jnd_glove_mean_reps[i]), col = alpha("pink", 0.5)   )
 }
 # real glove
 real_glove = real_toj[real_toj$base_probe_dist == 0.2,]$safe
-points(SOAs, real_base, col = "red", pch = 15)
+points(SOAs, real_glove, col = "red", pch = 15)
 
 # TRUE convention
 plot(SOAs, pnorm( SOAs, mean = pss_know_mean_reps[1], sd = jnd_know_mean_reps[1]), main = "know convention", ylab = "safe proportion", xlab = "SOA", col = alpha("turquoise", 0.5) )
@@ -351,6 +351,12 @@ for (i in 2:length(kappa_attend_reps)) {
 hist(color_trials[color_trials$attended == TRUE,]$color_diff_radians, breaks = 50, freq = F, col = rgb(.9,.9,.9,.5), add = T)
 
 ### plot scatterplot of correlations
+# extract samples
+detach('package:rstan', unload = T)  # to ensure 
+library(rstan)
+ex_toj_color_post = extract(toj_color_post)
+
+
 # ~~~~ posterior check ~~~~
 # (1) population_pss_intercept_mean      
 # (2) population_pss_effect_mean          
@@ -377,8 +383,7 @@ betas$parameter = rep( c(
 , times = 1
 , each = nrow(betas2)*length(unique(betas$variable))/8  # 8 is number of parameters 
 )  
-betas$participant = rep(c(1:45), times = 8, each = nrow(betas2))
-
+betas$participant = rep(c(1:44), times = 8, each = nrow(betas2))
 
 pssmean2 = data.frame(value = ex_toj_color_post$population_pss_intercept_mean)
 pssmean2$iteration = rownames(pssmean2)
@@ -402,7 +407,8 @@ pss_per_id = ddply(
   , .variables = .(participant)
   , .fun = function(x){
     i = unique(x$participant)
-    pssintercept = pssmean_reps + pssconventioneffect_reps*conventionfactor[i]/2 + psssd_reps*x[x$parameter == "population_pss_intercept_mean",]$value
+    x_reps = sample(x[x$parameter == "population_pss_intercept_mean",]$value, 50, replace = TRUE)
+    pssintercept = pssmean_reps + pssconventioneffect_reps*conventionfactor[i]/2 + psssd_reps*x_reps
     df = data.frame(pssintercept)*250
     return(df)
   }
@@ -430,7 +436,8 @@ jnd_per_id = ddply(
   , .variables = .(participant)
   , .fun = function(x){
     i = unique(x$participant)
-    logjndintercept = logjndmean_reps + logjndconventioneffect_reps*conventionfactor[i]/2 + logjndsd_reps*x[x$parameter == "population_logjnd_intercept_mean",]$value
+    x_reps = sample(x[x$parameter == "population_logjnd_intercept_mean",]$value, 50, replace = TRUE)
+    logjndintercept = logjndmean_reps + logjndconventioneffect_reps*conventionfactor[i]/2 + logjndsd_reps*x_reps
     df = exp(data.frame(logjndintercept))*250
     names(df) = "jndintercept"
     return(df)
@@ -440,6 +447,7 @@ jnd_per_id = ddply(
 # get line of best fit through median values 
 jnd_med_per_id = aggregate(jndintercept ~ participant, data = jnd_per_id, FUN = median)$jndintercept
 pss_med_per_id = aggregate(pssintercept ~ participant, data = pss_per_id, FUN = median)$pssintercept
+
 
 ### Get REAL PSSs and JNDs
 toj_by_condition = ddply(
@@ -463,6 +471,8 @@ toj_by_condition = ddply(
 # plot posterior samples
 plot(pss_per_id$pssintercept, jnd_per_id$jndintercept, ylab = "jnd intercepts", xlab = "pss intercepts", col = alpha(pss_per_id$participant, 0.2) , ylim = c(0, 500) )
 abline(lm(jnd_med_per_id~pss_med_per_id), lty = 2)
+# get correllation
+cor(jnd_med_per_id, pss_med_per_id)
 
 # look at JND and PSS intercept scatter plot 
 # for attend glove
@@ -475,6 +485,10 @@ points(
   , pch = 20
 )
 abline(lm(jnd_by_id~pss_by_id))
+# get correlation
+cor(jnd_by_id, pss_by_id)
+
+
 
 
 
@@ -485,10 +499,6 @@ toj_color_post
 # visualize
 plot(toj_color_post)
 
-# extract samples
-detach('package:rstan', unload = T)  # to ensure 
-library(rstan)
-ex_toj_color_post = extract(toj_color_post)
 
 # # quantile functions 
 # quantile_95_summary = function(y) {
@@ -530,6 +540,14 @@ get_50_HDI = function(y) {
 
 
 #### violin plot for correlations ####
+# (1) population_pss_intercept_mean      
+# (2) population_pss_effect_mean          
+# (3) population_logjnd_intercept_mean    
+# (4) population_logjnd_effect_mean     
+# (5) logitRhoMean                         
+# (6) logKappaMean                        
+# (7) logitRhoEffectMean                 
+# (8) logKappaEffectMean 
 library(reshape2)
 pos_corr2 = data.frame(value = ex_toj_color_post$cor)
 pos_corr2$id = rownames(pos_corr2)
@@ -545,6 +563,200 @@ ggplot(data = pos_corr, aes(x = parameter, y = value))+
   geom_hline(yintercept = 0)+
   theme_gray(base_size = 18) 
 
+# get PSS vs. JND intercepts (for RJ)
+ggplot(
+  data = pos_corr[pos_corr$parameter == "value.1.3",]
+  , aes(x = parameter, y = value)
+  )+
+  geom_violin()+
+  labs(x = "Log JND vs. PSS Intercept Means", y = "Correlation Coefficient (r)")+
+  stat_summary(fun.data = get_95_HDI, size = 0.7)+
+  stat_summary(fun.data = get_50_HDI, size = 2.5)+  
+  geom_hline(yintercept = 0, linetype = 2, size = 1)+
+    theme_gray(base_size = 24)+
+    theme(panel.grid.major = element_line(size = 1.5)
+          ,panel.grid.minor = element_line(size = 1) 
+          , axis.text.x = element_blank()
+          , axis.ticks.x = element_blank()) 
+
+# get PSS effect vs. Rho effect 
+ggplot(
+  data = pos_corr[pos_corr$parameter == "value.2.7",]
+  , aes(x = parameter, y = value)
+)+
+  geom_violin()+
+  labs(x = "Logit \u03C1 vs. PSS Effect Means", y = "Correlation Coefficient (r)")+
+  stat_summary(fun.data = get_95_HDI, size = 0.7)+
+  stat_summary(fun.data = get_50_HDI, size = 2.5)+  
+  geom_hline(yintercept = 0, linetype = 2, size = 1)+
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1)
+        , axis.text.x = element_blank()
+        , axis.ticks.x = element_blank()) 
+
+# get PSS intercept vs. JND effect 
+ggplot(
+  data = pos_corr[pos_corr$parameter == "value.1.4",]
+  , aes(x = parameter, y = value)
+)+
+  geom_violin()+
+  labs(x = "Log JND Effect Means vs. PSS Intercept Means", y = "Correlation Coefficient (r)")+
+  stat_summary(fun.data = get_95_HDI, size = 0.7)+
+  stat_summary(fun.data = get_50_HDI, size = 2.5)+  
+  geom_hline(yintercept = 0, linetype = 2, size = 1)+
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1)
+        , axis.text.x = element_blank()
+        , axis.ticks.x = element_blank()) 
+
+
+### scatterplot of correlation
+### See robustness of bayes cor parameter to outliers 
+# PSS vs. JND intercepts (for RJ explanation)
+pss_ids = ddply(
+  .data = betas
+  , .variables = .(participant)
+  , .fun = function(x){
+    i = unique(x$participant)
+    x_use = x[x$parameter ==  "population_pss_intercept_mean",]$value
+    pssintercept = median(pssmean) + median(pssconventioneffect)*conventionfactor[i]/2 + median(psssd)*median(x_use)
+    df = data.frame(pssintercept)
+    names(df) = "pssintercept"
+    return(df)
+  }
+)
+
+jnd_ids = ddply(
+  .data = betas
+  , .variables = .(participant)
+  , .fun = function(x){
+    i = unique(x$participant)
+    x_use = x[x$parameter == "population_logjnd_intercept_mean",]$value
+    logjndintercept = median(logjndmean) + median(logjndconventioneffect)*conventionfactor[i]/2 + median(logjndsd)*median(x_use)
+    df = data.frame(logjndintercept)
+    names(df) = "jndintercept"
+    return(df)
+  }
+)
+
+pss_v_jnd = merge(jnd_ids, pss_ids)
+# get rid of outliers
+pss_v_jnd = pss_v_jnd[pss_v_jnd$jndintercept != max(pss_v_jnd$jndintercept)
+                      & pss_v_jnd$pssintercept != max(pss_v_jnd$pssintercept)
+                      & pss_v_jnd$jndintercept != min(pss_v_jnd$jndintercept)
+                      & pss_v_jnd$pssintercept != min(pss_v_jnd$pssintercept)
+                      ,]
+
+ggplot(data = pss_v_jnd, aes(x =pssintercept, y = jndintercept))+
+  scale_x_continuous(name = "PSS Intercept Mean (Normalized)")+
+  scale_y_continuous(name = "Log JND Intercept Mean (Normalized)")+
+  geom_point(size = 2)+
+  geom_smooth(method = "lm", se = FALSE, size = 1)+
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1))
+
+# PSS Intercepts vs. JND Effects (for RJ explanation)
+logjndeffect2 = data.frame(value = ex_toj_color_post$population_logjnd_effect_mean) # must devide by two for SD to make sense 
+logjndeffect2$iteration = rownames(logjndeffect2)
+logjndeffect = melt( logjndeffect2 )$value
+
+logjndeffectsd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_logjnd_effect_sd))
+logjndeffectsd2$iteration = rownames(logjndeffectsd2)
+logjndeffectsd = melt( logjndeffectsd2 )$value
+
+jndeffect_ids = ddply(
+  .data = betas
+  , .variables = .(participant)
+  , .fun = function(x){
+    i = unique(x$participant)
+    x_use = x[x$parameter == "population_logjnd_effect_mean",]$value
+    logjndeffect = median(logjndeffect)/2 + median(logjndeffectsd)*median(x_use)
+    df = data.frame(logjndeffect)
+    names(df) = "jndeffect"
+    return(df)
+  }
+)
+
+pss_v_jndeffect = merge(jndeffect_ids, pss_ids)
+# get rid of outliers
+pss_v_jndeffect = pss_v_jndeffect[pss_v_jndeffect$jndeffect != max(pss_v_jndeffect$jndeffect)
+                      & pss_v_jndeffect$pssintercept != max(pss_v_jndeffect$pssintercept)
+                      & pss_v_jndeffect$jndeffect != min(pss_v_jndeffect$jndeffect)
+                      & pss_v_jndeffect$pssintercept != min(pss_v_jndeffect$pssintercept)
+                      ,]
+
+ggplot(data = pss_v_jndeffect, aes(x =pssintercept, y = jndeffect))+
+  scale_x_continuous(name = "PSS Intercept Mean (Normalized)")+
+  scale_y_continuous(name = "Log JND Effect Mean (Normalized)")+
+  geom_point(size = 2)+
+  geom_smooth(method = "lm", se = FALSE, size = 1)+
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1))
+
+
+# Rho effect ~ PSS effect
+psseffect2 = data.frame(value = ex_toj_color_post$population_pss_effect_mean)
+psseffect2$iteration = rownames(psseffect2)
+psseffect = melt( psseffect2 )$value
+
+psseffectsd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_pss_effect_sd))
+psseffectsd2$iteration = rownames(psseffectsd2)
+psseffectsd = melt( psseffectsd2 )$value
+
+psseffect_ids = ddply(
+  .data = betas
+  , .variables = .(participant)
+  , .fun = function(x){
+    i = unique(x$participant)
+    x_use = x[x$parameter ==  "population_pss_effect_mean",]$value
+    psseffect = median(psseffect/2)  + median(psseffectsd)*median(x_use)
+    df = data.frame(psseffect)
+    names(df) = "psseffect"
+    return(df)
+  }
+)
+
+rhoeffect2 = data.frame(value = ex_toj_color_post$logitRhoEffectMean)
+rhoeffect2$iteration = rownames(rhoeffect2)
+rhoeffect = melt( rhoeffect2 )$value
+
+rhoeffectsd2 = data.frame(value = tan(ex_toj_color_post$zlogitRhoEffectSD))
+rhoeffectsd2$iteration = rownames(rhoeffectsd2)
+rhoeffectsd = melt( rhoeffectsd2 )$value
+
+rhoeffect_ids = ddply(
+  .data = betas
+  , .variables = .(participant)
+  , .fun = function(x){
+    i = unique(x$participant)
+    x_use = x[x$parameter == "logitRhoEffectMean",]$value
+    logitrhoeffect = median(rhoeffect) + median(rhoeffectsd)*median(x_use)
+    df = data.frame(logitrhoeffect)
+    names(df) = "logitrhoeffect"
+    return(df)
+  }
+)
+
+psseffect_v_rhoeffect = merge(rhoeffect_ids, psseffect_ids)
+# get rid of outliers
+psseffect_v_rhoeffect = psseffect_v_rhoeffect[psseffect_v_rhoeffect$logitrhoeffect != max(psseffect_v_rhoeffect$logitrhoeffect)
+                      & psseffect_v_rhoeffect$psseffect != max(psseffect_v_rhoeffect$psseffect)
+                      & psseffect_v_rhoeffect$logitrhoeffect != min(psseffect_v_rhoeffect$logitrhoeffect)
+                      & psseffect_v_rhoeffect$psseffect != min(psseffect_v_rhoeffect$psseffect)
+                      ,]
+
+ggplot(data = psseffect_v_rhoeffect, aes(x =psseffect, y = logitrhoeffect))+
+  scale_x_continuous(name = "Half PSS Effect Mean (Normalized)")+
+  scale_y_continuous(name = "Logit \u03C1 Effect Mean (Normalized, Magnitude)")+
+  geom_point(size = 2)+
+  geom_smooth(method = "lm", se = FALSE, size = 1)+
+  theme_gray(base_size = 24)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1))
 
 
 #### violin plot for key parameters (plot things on same scale) ####
@@ -555,8 +767,8 @@ pos_SOA_scale = data.frame(
   , exp( ex_toj_color_post$population_logjnd_intercept_mean ) * 250
   )
   , parameter = c(
-    rep("PSS Intercept Mean", 40000)  
-    , rep("JND Intercept Mean", 40000)  
+    rep("PSS Intercept Mean", 80000)  
+    , rep("JND Intercept Mean", 80000)  
     )
   # , dummy = rep("dummy", 80000)
 )
@@ -573,12 +785,13 @@ ggplot(data = pos_SOA_scale)+
   facet_wrap(~parameter, scales = "free")+
   # scale_x_discrete(labels = "", breaks = c())+
   # geom_hline(yintercept = 0, linetype = 2)+
-  theme_gray(base_size = 24)+
+  theme_gray(base_size = 30)+
   theme(
     panel.grid.major = element_line(size = 1.5)
     , panel.grid.minor = element_line(size = 1)
     , strip.background = element_blank()
     , strip.text.x = element_blank() 
+    , axis.ticks.x = element_blank()
     )
 
 # 95% HDIs 
@@ -595,40 +808,82 @@ get_95_HDI(exp( ex_toj_color_post$population_logjnd_intercept_mean ) * 250)
 ### SOA scale - effects 
 pos_SOA_scale_effects = data.frame(  
   effect = c(
-    ( (ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_effect_mean) 
-    - (ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_effect_mean) ) * 250
-    , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_effect_mean )
-        - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_effect_mean  ) ) * 250 
+    ( (ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_effect_mean/2) 
+    - (ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_effect_mean/2) ) * 250
+    , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_effect_mean/2 )
+        - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_effect_mean/2  ) ) * 250 
   )
   , parameter = c(
-    rep("PSS Effect Mean", 40000)
-    , rep("JND Effect Mean", 40000)
+    rep("PSS Effect Mean", 80000)
+    , rep("JND Effect Mean", 80000)
   )
 )
 
 ggplot(data = pos_SOA_scale_effects, aes(x = parameter, y = effect))+
   geom_violin()+
-  stat_summary(fun.data = get_95_HDI, size = 0.5)+
+  stat_summary(fun.data = get_95_HDI, size = 0.7)+
   stat_summary(fun.data = get_50_HDI, size = 2.5)+
   labs(x = "", y = "SOA (Base - Glove; ms)")+
 #  scale_x_discrete(labels = c("PSS Effect Mean", "JND Effect Mean"))+
   geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  theme_gray(base_size = 24)+
+  theme_gray(base_size = 30)+
   theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)) 
+        ,panel.grid.minor = element_line(size = 1)
+        , axis.ticks.x = element_blank()) 
 
 # 95% HDIs
 # pss effect 
-get_95_HDI(ex_toj_color_post$population_pss_effect_mean*2*250 )  # multiply by two for full difference
+get_95_HDI(ex_toj_color_post$population_pss_effect_mean*250 )  
 # get_95_HDI(tan(ex_toj_color_post$zpopulation_pss_effect_sd)*2*250)  
 # print("ERROR: Does it make sense to multiply the SD by 2?")
 # jnd effect 
 get_95_HDI(
-  ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_effect_mean )
-    - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_effect_mean  ) ) * 250 
+  ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_effect_mean/2 )
+    - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_effect_mean/2  ) ) * 250 
 )
 # get_95_HDI( tan(ex_toj_color_post$zpopulation_logjnd_effect_sd)*2) #  (log scale, normalized)
 # print("ERROR: Does it make sense to multiply the SD by 2?")
+
+
+
+### SOA scale - convention effect 
+pos_SOA_scale_convention = data.frame(  
+  effect = c(
+    ( (ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_convention_effect_mean/2) 
+      - (ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_convention_effect_mean/2) ) * 250
+    , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_convention_effect_mean/2 )
+        - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_convention_effect_mean/2  ) ) * 250 
+  )
+  , parameter = c(
+    rep("PSS Convention Effect Mean", 80000)
+    , rep("JND Convention Effect Mean", 80000)
+  )
+)
+
+ggplot(data = pos_SOA_scale_convention, aes(x = parameter, y = effect))+
+  geom_violin()+
+  stat_summary(fun.data = get_95_HDI, size = 0.7)+
+  stat_summary(fun.data = get_50_HDI, size = 2.5)+
+  labs(x = "", y = "SOA (Don't Know - Know; ms)")+
+  scale_x_discrete(labels = c("PSS Convention\nEffect Mean", "JND Convention\nEffect Mean"))+
+  geom_hline(yintercept = 0, linetype = 2, size = 1)+
+  theme_gray(base_size = 30)+
+  theme(panel.grid.major = element_line(size = 1.5)
+        ,panel.grid.minor = element_line(size = 1)
+        , axis.ticks.x = element_blank()) 
+
+# 95% HDIs
+# pss effect 
+get_95_HDI(ex_toj_color_post$population_pss_convention_effect_mean*250 )  # multiply by two for full difference
+# get_95_HDI(tan(ex_toj_color_post$zpopulation_pss_effect_sd)*2*250)  
+# print("ERROR: Does it make sense to multiply the SD by 2?")
+# jnd effect 
+get_95_HDI(
+  ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_convention_effect_mean/2 )
+    - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_convention_effect_mean/2  ) ) * 250 
+)
+
+
 
 
 ### Rho scale
@@ -637,19 +892,20 @@ pos_rho_scale = data.frame(
     plogis(ex_toj_color_post$logitRhoMean)
   )
   , parameter = c(
-    rep("rhoInterceptMean", 40000)
+    rep("rhoInterceptMean", 80000)
   )
 )
 
 ggplot(data = pos_rho_scale, aes(x = parameter, y = value))+
   geom_violin()+
-  stat_summary(fun.data = get_95_HDI, size = 0.5)+
+  stat_summary(fun.data = get_95_HDI, size = 0.7)+
   stat_summary(fun.data = get_50_HDI, size = 2.5)+
   labs(x = "", y = "\u03C1")+
   scale_x_discrete(labels = c("Probability of Memory Intercept Mean"))+
-  theme_gray(base_size = 24)+
+  theme_gray(base_size = 30)+
   theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)) 
+        ,panel.grid.minor = element_line(size = 1)
+        , axis.ticks.x = element_blank()) 
 
 # 95% HDIs
 # rho intercept 
@@ -665,7 +921,7 @@ pos_rho_scale_effects = data.frame(
     - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoEffectMean/2 ) )
   )
   , parameter = c(
-    rep("rhoEffectMean", 40000)
+    rep("rhoEffectMean", 80000)
   )
 )
 
@@ -673,12 +929,13 @@ ggplot(data = pos_rho_scale_effects, aes(x = parameter, y = effect))+
   geom_violin()+
   labs(x = "", y = "\u03C1 (Attended - Unattended)")+
   geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  stat_summary(fun.data = get_95_HDI, size = 0.5)+
+  stat_summary(fun.data = get_95_HDI, size = 0.7)+
   stat_summary(fun.data = get_50_HDI, size = 2.5)+
   scale_x_discrete(labels = c("Probability of Memory Effect Mean"))+
-  theme_gray(base_size = 24)+
+  theme_gray(base_size = 30)+
   theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)) 
+        ,panel.grid.minor = element_line(size = 1)
+        , axis.ticks.x = element_blank()) 
 
 # 95% HDIs
 # rho effect 
@@ -698,20 +955,21 @@ pos_kappa_scale = data.frame(
     exp( ex_toj_color_post$logKappaMean ) # regular scale ~ kappa; log scale ~ kappa prime;
   )
   , parameter = c(
-    rep("kappaInterceptMean", 40000)
+    rep("kappaInterceptMean", 80000)
   )
 )
 
 ggplot(data = pos_kappa_scale, aes(x = parameter, y = value))+
   geom_violin()+
   labs(x = "", y = "\u03BA")+  # are there any units here?
-  stat_summary(fun.data = get_95_HDI, size = 0.5)+
+  stat_summary(fun.data = get_95_HDI, size = 0.7)+
   stat_summary(fun.data = get_50_HDI, size = 2.5)+
   scale_x_discrete(labels = c("Fidelity of Memory Intercept Mean"))+
 #  scale_y_continuous(limits = c(0,20) ) +
-  theme_gray(base_size = 24)+
+  theme_gray(base_size = 30)+
   theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1))
+        ,panel.grid.minor = element_line(size = 1)
+        , axis.ticks.x = element_blank())
 
 # 95% HDIs
 # kappa intercept (*radians*)
@@ -727,7 +985,7 @@ pos_kappa_scale_effects = data.frame(
       - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaEffectMean/2) )
   )
   , parameter = c(
-    rep("kappaEffectMean", 40000)
+    rep("kappaEffectMean", 80000)
   )
 )
 
@@ -735,12 +993,13 @@ ggplot(data = pos_kappa_scale_effects, aes(x = parameter, y = value))+
   geom_violin()+
   labs(x = "", y = "\u03BA (Attended - Unattended)")+  # are there any units here?
   geom_hline(yintercept = 0, linetype = 2, size = 1 ) +
-  stat_summary(fun.data = get_95_HDI, size = 0.5)+
+  stat_summary(fun.data = get_95_HDI, size = 0.7)+
   stat_summary(fun.data = get_50_HDI, size = 2.5)+
   scale_x_discrete(labels = c("Fidelity of Memory Effect Mean"))+
-  theme_gray(base_size = 24)+
+  theme_gray(base_size = 30)+
   theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1))
+        ,panel.grid.minor = element_line(size = 1)
+        , axis.ticks.x = element_blank())
 
 # 95% HDIs
 # kappa effects (*radians*)
@@ -756,10 +1015,10 @@ get_95_HDI(
 # #### TOJ: plot posterior pss means with effects ####
 # pos_pssMean_WithEffect = data.frame(
 #   c( 
-#     ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_effect_mean
-#     , ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_effect_mean
+#     ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_effect_mean/2
+#     , ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_effect_mean/2
 #   ) * 250
-#   , c(rep("Base",40000), rep("Glove", 40000))
+#   , c(rep("Base",80000), rep("Glove", 80000))
 # )
 # names(pos_pssMean_WithEffect) = c("pssMean", "Effect")
 # 
@@ -778,13 +1037,13 @@ get_95_HDI(
 # including effects 
 yGlove = pnorm(
   -250:250
-  , mean = ( median(ex_toj_color_post$population_pss_intercept_mean) - median(ex_toj_color_post$population_pss_effect_mean) ) * 250
-  , sd = ( exp( median(ex_toj_color_post$population_logjnd_intercept_mean) - median(ex_toj_color_post$population_logjnd_effect_mean) )   ) * 250
+  , mean = ( median(ex_toj_color_post$population_pss_intercept_mean) - median(ex_toj_color_post$population_pss_effect_mean)/2 ) * 250
+  , sd = ( exp( median(ex_toj_color_post$population_logjnd_intercept_mean) - median(ex_toj_color_post$population_logjnd_effect_mean)/2 )   ) * 250
 )
 yBase = pnorm(
   -250:250
-  , mean = ( median(ex_toj_color_post$population_pss_intercept_mean) + median(ex_toj_color_post$population_pss_effect_mean) ) * 250
-  , sd = ( exp( median(ex_toj_color_post$population_logjnd_intercept_mean) + median(ex_toj_color_post$population_logjnd_effect_mean) )   ) * 250
+  , mean = ( median(ex_toj_color_post$population_pss_intercept_mean) + median(ex_toj_color_post$population_pss_effect_mean)/2 ) * 250
+  , sd = ( exp( median(ex_toj_color_post$population_logjnd_intercept_mean) + median(ex_toj_color_post$population_logjnd_effect_mean)/2 )   ) * 250
   
 )
 df = data.frame(SOA = -250:250, Prop = c(yGlove, yBase), Attend = c(rep("Glove",501), rep("Base", 501)))
@@ -802,8 +1061,8 @@ gg = ggplot(data = df, aes(y = Prop, x = SOA, colour = Attend))+
   Text1 = textGrob(label = paste("Out"), gp = gpar(fontsize= 24))
   Text2 = textGrob(label = paste("Safe"), gp = gpar(fontsize= 24)) 
   gg = gg+
-  annotation_custom(grob = Text1,  xmin = -200, xmax = -200, ymin = -0.11, ymax = -0.11)+
-  annotation_custom(grob = Text2,  xmin = 200, xmax = 200, ymin = -0.11, ymax = -0.11)
+  annotation_custom(grob = Text1,  xmin = -200, xmax = -200, ymin = -0.115, ymax = -0.115)+
+  annotation_custom(grob = Text2,  xmin = 200, xmax = 200, ymin = -0.115, ymax = -0.115)
   # Code to override clipping
   gg2 <- ggplot_gtable(ggplot_build(gg))
   gg2$layout$clip[gg2$layout$name=="panel"] <- "off"
@@ -816,10 +1075,10 @@ gg = ggplot(data = df, aes(y = Prop, x = SOA, colour = Attend))+
 #### Color: plot posterior means with effects ####
 pos_rhoMean_WithEffect = data.frame(
   c( 
-    ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoEffectMean/2
-    , ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoEffectMean/2
+    plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoEffectMean/2)
+    , plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoEffectMean/2)
   ) 
-  , c(rep("Attended",40000), rep("Unattended", 40000))
+  , c(rep("Attended",80000), rep("Unattended", 80000))
 )
 names(pos_rhoMean_WithEffect) = c("rhoMean", "Effect")
 
@@ -829,7 +1088,7 @@ ggplot(pos_rhoMean_WithEffect, aes(x = rhoMean, ..density.., fill = Effect))+
   geom_density(data = pos_rhoMean_WithEffect[pos_rhoMean_WithEffect$Effect == "Attended",],alpha = 0.5)+
   geom_density(data = pos_rhoMean_WithEffect[pos_rhoMean_WithEffect$Effect == "Unattended",],alpha = 0.5)+
   scale_fill_hue("Effect", l = c(90, 45), c = c(100, 50) ) +
-  labs(x = "Probability of Memory Population Mean (Logit)", y = "Density", colour = "")+
+  labs(x = "Probability of Memory Population Mean", y = "Density", colour = "")+
   theme_gray(base_size = 24)+
   theme(panel.grid.major = element_line(size = 1.5)
         ,panel.grid.minor = element_line(size = 1))

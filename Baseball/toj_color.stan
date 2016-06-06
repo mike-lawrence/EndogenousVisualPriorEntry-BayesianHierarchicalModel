@@ -88,9 +88,9 @@ transformed parameters{
 		population_logjnd_effect_sd <- tan(zpopulation_logjnd_effect_sd) ;
 		for(this_id in 1:N_toj){
 			pss_intercept_per_id[this_id] <- beta[this_id,1]*population_pss_intercept_sd + population_pss_intercept_mean + population_pss_convention_effect_mean*condition_convention[this_id]/2 ;
-			pss_effect_per_id[this_id] <- beta[this_id,2]*population_pss_effect_sd + population_pss_effect_mean/2 ;
+			pss_effect_per_id[this_id] <- (beta[this_id,2]*population_pss_effect_sd + population_pss_effect_mean)/2 ;
 			logjnd_intercept_per_id[this_id] <- beta[this_id,3]*population_logjnd_intercept_sd + population_logjnd_intercept_mean + population_logjnd_convention_effect_mean*condition_convention[this_id]/2 ;
-			logjnd_effect_per_id[this_id] <- beta[this_id,4]*population_logjnd_effect_sd + population_logjnd_effect_mean/2 ;
+			logjnd_effect_per_id[this_id] <- (beta[this_id,4]*population_logjnd_effect_sd + population_logjnd_effect_mean)/2 ;
 		}
 		for(this_obs in 1:L_toj){
 			trial_pss[this_obs] <- pss_intercept_per_id[id_toj[this_obs]] + pss_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs] ;  // glove, RIGHT is -1... base, LEFT is +1 
