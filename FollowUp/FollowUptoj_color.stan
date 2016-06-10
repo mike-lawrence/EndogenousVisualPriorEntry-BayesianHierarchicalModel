@@ -8,9 +8,11 @@ data{
 	int<lower=0> N_color;                      
   int<lower=0> L_color;                         
   int<lower=0> unit_color[L_color];                 
-  int<lower=1,upper=2> condition_color[L_color];    
-  int condition_convention[N_toj];
-  real<lower=0,upper=2*pi()> y_color[L_color];      
+  int<lower=1,upper=2> condition_color[L_color];   
+  int condition_probe[N_color];
+  int condition_initial_bias[N_toj];
+  int condition_judgement_type[N_toj];
+  real<lower=0,upper=2*pi()> y_color[L_color]; 
 }
 transformed data{
 	vector[8] zeros ;
@@ -24,10 +26,14 @@ parameters{
 	//population means
 	real population_pss_intercept_mean ;
 	real population_pss_effect_mean ; 
-	real population_pss_convention_effect_mean;
+	real population_pss_initial_bias_effect_mean;
+	real population_pss_judgement_type_effect_mean;
+	real population_pss_probe_effect_mean;
 	real population_logjnd_intercept_mean ;
 	real population_logjnd_effect_mean ;
-	real population_logjnd_convention_effect_mean; 
+	real population_logjnd_initial_bias_effect_mean;
+	real population_logjnd_judgement_type_effect_mean;
+	real population_logjnd_probe_effect_mean;
 	//population sds
 	real<lower=0,upper=pi()/2> zpopulation_pss_intercept_sd ;
 	real<lower=0,upper=pi()/2> zpopulation_pss_effect_sd ; 
@@ -39,6 +45,11 @@ parameters{
   real logKappaMean;
   real logitRhoEffectMean;
   real logKappaEffectMean;
+  // between subject, probe duration effect
+  real logitRhoProbeEffectMean;
+  real logKappaProbeEffectMean;
+  real logitRhoProbeInteractionEffectMean;
+  real logKappaProbeInteractionEffectMean;
   // SDs for population parameters
   real<lower=0,upper=pi()/2> zlogitRhoSD;
   real<lower=0,upper=pi()/2> zlogKappaSD;
@@ -87,13 +98,19 @@ transformed parameters{
 		population_logjnd_intercept_sd <- tan(zpopulation_logjnd_intercept_sd);
 		population_logjnd_effect_sd <- tan(zpopulation_logjnd_effect_sd) ;
 		for(this_id in 1:N_toj){
-			pss_intercept_per_id[this_id] <- beta[this_id,1]*population_pss_intercept_sd + population_pss_intercept_mean + population_pss_convention_effect_mean*condition_convention[this_id]/2 ;
+			pss_intercept_per_id[this_id] <- beta[this_id,1]*population_pss_intercept_sd + population_pss_intercept_mean
+			+ population_pss_judgement_type_effect_mean*condition_judgement_type[this_id]/2 
+			+ population_pss_initial_bias_effect_mean*condition_initial_bias[this_id]/2 
+			+ population_pss_probe_effect_mean*condition_probe[this_id]/2;
 			pss_effect_per_id[this_id] <- (beta[this_id,2]*population_pss_effect_sd + population_pss_effect_mean)/2 ;
-			logjnd_intercept_per_id[this_id] <- beta[this_id,3]*population_logjnd_intercept_sd + population_logjnd_intercept_mean + population_logjnd_convention_effect_mean*condition_convention[this_id]/2 ;
+			logjnd_intercept_per_id[this_id] <- beta[this_id,3]*population_logjnd_intercept_sd + population_logjnd_intercept_mean
+			+ population_logjnd_judgement_type_effect_mean*condition_judgement_type[this_id]/2 
+			+ population_logjnd_initial_bias_effect_mean*condition_initial_bias[this_id]/2
+			+ population_logjnd_probe_effect_mean*condition_probe[this_id]/2;
 			logjnd_effect_per_id[this_id] <- (beta[this_id,4]*population_logjnd_effect_sd + population_logjnd_effect_mean)/2 ;
 		}
 		for(this_obs in 1:L_toj){
-			trial_pss[this_obs] <- pss_intercept_per_id[id_toj[this_obs]] + pss_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs] ;  // glove, RIGHT is -1... base, LEFT is +1 
+			trial_pss[this_obs] <- pss_intercept_per_id[id_toj[this_obs]] + pss_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs];  // glove, RIGHT is -1... base, LEFT is +1 
 			trial_logjnd[this_obs] <- logjnd_intercept_per_id[id_toj[this_obs]] + logjnd_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs]; // glove, RIGHT is -1... base, LEFT is +1 
 			trial_prob[this_obs] <- Phi_approx((x_toj[this_obs]-trial_pss[this_obs])/exp(trial_logjnd[this_obs])) ;
 		}
@@ -105,13 +122,13 @@ transformed parameters{
     logKappaEffectSD <- tan(zlogKappaEffectSD) ;
     // compute unit-level parameters
     for(n in 1:N_color){
-      logitRho[n] <- logitRhoMean + beta[n,5]*logitRhoSD;
-      logKappa[n] <- logKappaMean + beta[n,6]*logKappaSD;
-      logitRhoEffect[n] <- logitRhoEffectMean + beta[n,7]*logitRhoEffectSD;
-      logKappaEffect[n] <- logKappaEffectMean + beta[n,8]*logKappaEffectSD;
-      rho[1,n] <- inv_logit( logitRho[n] - logitRhoEffect[n]/2 );  // unattended is 1, is minus
-      rho[2,n] <- inv_logit( logitRho[n] + logitRhoEffect[n]/2 );  // attended is 2, is plus
-      kappa[1,n] <- exp( logKappa[n] - logKappaEffect[n]/2 );
+      logitRho[n] <- logitRhoMean + beta[n,5]*logitRhoSD + condition_probe[n]*logitRhoProbeEffectMean/2;
+      logKappa[n] <- logKappaMean + beta[n,6]*logKappaSD + condition_probe[n]*logKappaProbeEffectMean/2;
+      logitRhoEffect[n] <- logitRhoEffectMean + beta[n,7]*logitRhoEffectSD + condition_probe[n]*logitRhoProbeInteractionEffectMean;  // Don't devide by 2 because devided later 
+      logKappaEffect[n] <- logKappaEffectMean + beta[n,8]*logKappaEffectSD + condition_probe[n]*logKappaProbeInteractionEffectMean;
+      rho[1,n] <- inv_logit( logitRho[n] - logitRhoEffect[n]/2 ) ;  // unattended is 1, is minus
+      rho[2,n] <- inv_logit( logitRho[n] + logitRhoEffect[n]/2 ) ;  // attended is 2, is plus
+      kappa[1,n] <- exp( logKappa[n] - logKappaEffect[n]/2  ) ;
       kappa[2,n] <- exp( logKappa[n] + logKappaEffect[n]/2 );
       logRho[1,n] <- log(rho[1,n]);
       logRho[2,n] <- log(rho[2,n]);
@@ -130,16 +147,25 @@ transformed parameters{
 model{
 	population_pss_intercept_mean ~ normal(0,1) ;
 	population_pss_effect_mean ~ normal(0,1) ;
-	population_pss_convention_effect_mean ~ normal(0,1) ;
+	population_pss_initial_bias_effect_mean ~ normal(0,1);
+	population_pss_judgement_type_effect_mean ~ normal(0,1);
+	population_pss_probe_effect_mean ~ normal(0,1);
 	population_logjnd_intercept_mean ~ normal(-1,.5) ;
 	population_logjnd_effect_mean ~ normal(0,1) ;
-	population_logjnd_convention_effect_mean ~ normal(0,1) ;
+	population_logjnd_initial_bias_effect_mean ~ normal(0,1);
+	population_logjnd_judgement_type_effect_mean ~ normal(0,1);
+	population_logjnd_probe_effect_mean ~ normal(0,1);
+
 
   //set priors on population parameters
   logitRhoMean ~ normal(3,3);
   logKappaMean ~ normal(3,3);
   logitRhoEffectMean ~ normal(0,3) ;#normal(0,3);
   logKappaEffectMean ~ normal(0,3) ;#normal(0,3);
+  logitRhoProbeEffectMean ~ normal(0,3) ;
+  logKappaProbeEffectMean ~ normal(0,3) ;
+  logitRhoProbeInteractionEffectMean ~ normal(0,3);
+  logKappaProbeInteractionEffectMean ~ normal(0,3);
   // logitRhoSD ~ weibull(2,2);#student_t(4,0,2);
   // logKappaSD ~ weibull(2,2);#student_t(4,0,1);
   // logitRhoEffectSD ~ weibull(2,2);#student_t(4,0,1);

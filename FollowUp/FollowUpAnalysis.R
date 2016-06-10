@@ -30,27 +30,31 @@ checksums = NULL
 
 a = ldply(
   .data = list.files(
-	  	pattern = ".txt"
-  		, full.names = T
-  		, path = '.'
-  	)
+    pattern = ".txt"
+    , full.names = T
+    , path = './100msOrLess'  # includes folders for 50ms, 75ms, 100ms
+    , recursive = T
+  )
   , .fun = check_before_read
   , .progress = 'text'
 )
 names(a)[1] = "id"
+a$onehundredms = TRUE
 
-# b = ldply(
-# 	.data = list.files(
-# 		pattern = ".txt"
-# 		, full.names = T
-# 		, path = './Baseball/baseballtojdata/Data_delta'
-# 	)
-# 	, .fun = check_before_read
-# 	, .progress = 'text'
-# )
-# b$id = paste('delta',b$participant_id,b$created)
+b = ldply(
+  .data = list.files(
+	  	pattern = ".txt"
+  		, full.names = T
+  		, path = './200ms'
+	  	# , path = './50ms'
+  	)
+  , .fun = check_before_read
+  , .progress = 'text'
+)
+names(b)[1] = "id"
+b$onehundredms = FALSE
 
-# a = rbind(a,b)
+a = rbind(a,b)
 
 length(unique(a$id))
 
@@ -166,10 +170,13 @@ toj_trials[toj_trials$soa2 == "240",]$soa2 = 250
 # Negative SOAs means RIGHT first 
 toj_trials[toj_trials$t1_loc == "RIGHT",]$soa2 = -toj_trials[toj_trials$t1_loc == "RIGHT",]$soa2
 
+# save
+save(toj_trials, file = "FollowUp_toj_trials.Rdata")
+
 ### Plot Psychometric Functions 
 toj_means_by_id_by_condition = ddply(
   .data = toj_trials
-  , .variables = .(id,block_bias, soa2)
+  , .variables = .(id, block_bias, soa2)
   , .fun = function(x){
     to_return = data.frame(
       value = mean(x$left_first_TF)
@@ -195,10 +202,60 @@ ggplot(
   geom_smooth(
     method = "glm"
     , method.args = list(family = "binomial")
-    , formula = y ~ splines::ns(x,3)
+    , formula = y ~ splines::ns(x,2)
     , se = FALSE
   )+
-  theme(legend.position = "none")  # to be blind to the condition 
+  labs(x = "Stimulus Onset Asynchony (Negative Means First Line Appeared on the Right)", y = "Proportion of 'LEFT' Responses")+
+  geom_point(size = 4)+
+  geom_point(colour = "grey90")
+  # +theme(legend.position = "none")  # to be blind to the condition 
+
+# get pss and jnds for bewteen subject factors
+toj_by_condition = ddply(
+  .data = toj_trials
+  , .variables = .(id, toj_judgement_type, probe_initial_bias)  
+  , .fun = function(x){
+    fit = glm(
+      formula = left_first_TF~soa2
+      , data = x
+      , family = binomial(link = "probit")
+    )
+    to_return = data.frame(
+      id = x$id[1]
+      , pss = -coef(fit)[1]/coef(fit)[2]
+      , jnd = (  (1-coef(fit)[1])/coef(fit)[2] -  (-1-coef(fit)[1])/coef(fit)[2] ) / 2  # unsure about this
+    )
+    return(to_return)
+  }
+)
+# look at descriptive statistics (mean values) of raw data to compare with parameter estimates of model later
+aggregate(pss ~ toj_judgement_type, data = toj_by_condition, FUN = mean) 
+plot(toj_by_condition$pss) # sense of outliers
+aggregate(jnd ~ toj_judgement_type, data = toj_by_condition, FUN = mean) 
+plot(toj_by_condition$jnd)  # get a sense of outliers
+aggregate(pss ~ probe_initial_bias, data = toj_by_condition, FUN = mean)
+aggregate(jnd ~ probe_initial_bias, data = toj_by_condition, FUN = mean)
+
+# Does probe duration effect PSS indirectly?
+toj_by_probe = ddply(
+  .data = toj_trials
+  , .variables = .(id, onehundredms)  
+  , .fun = function(x){
+    fit = glm(
+      formula = left_first_TF~soa2
+      , data = x
+      , family = binomial(link = "probit")
+    )
+    to_return = data.frame(
+      id = x$id[1]
+      , pss = -coef(fit)[1]/coef(fit)[2]
+      , jnd = (  (1-coef(fit)[1])/coef(fit)[2] -  (-1-coef(fit)[1])/coef(fit)[2] ) / 2  # unsure about this
+    )
+    return(to_return)
+  }
+)
+aggregate(pss~onehundredms, data=toj_by_probe, FUN=mean)
+aggregate(jnd~onehundredms, data=toj_by_probe, FUN=mean)
 
 
 
@@ -229,10 +286,68 @@ hist(color_trials$p_minus_j,br=100)
 color_trials$attended = FALSE
 color_trials$attended[ (color_trials$block_bias == "LEFT" & color_trials$probe_loc == "LEFT") | (color_trials$block_bias == "RIGHT" & color_trials$probe_loc == "RIGHT")] = TRUE
 
-# mixture model - rho and kappa by participant
-source("../fit_uvm.R")
 color_trials$color_diff_radians = color_trials$p_minus_j*pi/180
-fitted_all = ddply(
+
+# save
+save(color_trials, file = "FollowUp_color_trials.Rdata")
+
+### mixture model
+# rho and kappa by participant + condition
+source("../fit_uvm.R")
+fitted_by_condition = ddply(
+  .data = color_trials
+  , .variables = .(id, attended)
+  , .fun = function(piece_of_df){
+    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
+    to_return = data.frame(
+      kappa_prime = fit$kappa_prime
+      , rho = fit$rho
+    )
+    return(to_return)
+  }
+  , .progress = 'time'
+)
+aggregate(rho~attended, data = fitted_by_condition, FUN = mean)
+aggregate(kappa_prime~attended, data = fitted_by_condition, FUN = mean)
+
+# rho and kappa by participant + probe duration 
+# to check validity of obetween-subject effectin stan model
+fitted_by_probe_duration = ddply(
+  .data = color_trials
+  , .variables = .(id, onehundredms)
+  , .fun = function(piece_of_df){
+    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
+    to_return = data.frame(
+      kappa_prime = fit$kappa_prime
+      , rho = fit$rho
+    )
+    return(to_return)
+  }
+  , .progress = 'time'
+)
+aggregate(rho~onehundredms, data = fitted_by_probe_duration, FUN = mean)
+aggregate(kappa_prime~onehundredms, data = fitted_by_probe_duration, FUN = mean)
+
+# check for potential interaction between probe duration and rho effect!
+# if no sign of interaction, consider just adding simple effects into model for simplicity
+fitted_by_both_conditions = ddply(
+  .data = color_trials
+  , .variables = .(id, onehundredms, attended)
+  , .fun = function(piece_of_df){
+    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
+    to_return = data.frame(
+      kappa_prime = fit$kappa_prime
+      , rho = fit$rho
+    )
+    return(to_return)
+  }
+  , .progress = 'time'
+)
+aggregate(rho~onehundredms + attended, data = fitted_by_both_conditions, FUN = mean)
+aggregate(kappa_prime~onehundredms + attended, data = fitted_by_both_conditions, FUN = mean)
+
+# rho and kappa by participant
+fitted_all =  ddply(
   .data = color_trials
   , .variables = .(id)
   , .fun = function(piece_of_df){
@@ -271,29 +386,36 @@ toj_color_data_for_stan = list(
   , y_toj = as.numeric(toj_trials$left_first_TF)  
   , x_toj = (as.numeric(toj_trials$soa2))/250  # we normalize soas, and therefore pss
   , id_toj = as.numeric(factor(toj_trials$id))
-  , condition_toj = ifelse(toj_trials$block_bias=="RIGHT",-1,1)  # RIGHT is -1 and LEFT is +1
+  # Flipped from Baseball 'Analysis' so no need to change in 'stananalysis'
+  # Will give positive effect for predicted results, which we want
+  , condition_toj = ifelse(toj_trials$block_bias=="LEFT",-1,1)  # LEFT is -1 and RIGHT is +1 
   , N_color = length(unique(color_trials$id))
   , L_color = nrow(color_trials)
   , unit_color = as.numeric(factor(color_trials$id))
   , condition_color = as.numeric(as.factor(color_trials$attended)) # TRUE is 2, FALSE is 1 
+  , condition_probe = ifelse(aggregate(onehundredms ~ id, data = color_trials, unique)$onehundred, -1, 1) # 100 ms is -1, and 200 ms is +1
+  , condition_initial_bias = ifelse(aggregate(probe_initial_bias ~ id, data = toj_trials, FUN = unique)$probe_initial_bias == "RIGHT", -1, 1) # RIGHT is -1, and LEFT is +1
+  , condition_judgement_type = ifelse(aggregate(toj_judgement_type ~ id, data = toj_trials, FUN = unique)$toj_judgement_type == "first", -1, 1) # first is -1, and second is +1
   , y_color = pi+degree_to_rad(color_trials$p_minus_j)  # want from 0 to 360 instead of -180 to 180
 )
 
 toj_color_model = stan_model(
-  file = '../EndogenousVisualPriorEntry-BayesianHierarchicalModel/toj_color.stan'
-)
+ file = '../EndogenousVisualPriorEntry-BayesianHierarchicalModel/FollowUp/FollowUptoj_color.stan'
+  # file = '../EndogenousVisualPriorEntry-BayesianHierarchicalModel/Baseball/toj_color.stan'
+  )
 
 toj_color_post = sampling(
   object = toj_color_model
   , data = toj_color_data_for_stan
-  , iter = 1e2
+  , iter = 1e2*5
   , chains = 1
   , cores = 1
   , pars = c('trial_prob', 'p'
              ,'population_pss_effect_mean'
              , 'population_logjnd_effect_mean'
-             , 'logitRhoEffectMean'
-             , 'logKappaEffectMean')  # blind to the effects as I collect data
+             , 'zpopulation_logjnd_effect_sd'
+             , 'zpopulation_pss_effect_sd' 
+             )  # blind to the TOJ effects as I collect data
   , include = FALSE
 )
 print(toj_color_post)
