@@ -378,7 +378,7 @@ toj_color_post = sampling(
   , include = FALSE
 )
 print(toj_color_post)
-
+save(toj_color_post, "toj_color_post_June12th2016_studenttpriors")
 
 
 

@@ -128,18 +128,18 @@ transformed parameters{
 	}
 }
 model{
-	population_pss_intercept_mean ~ normal(0,1) ;
-	population_pss_effect_mean ~ normal(0,1) ;
-	population_pss_convention_effect_mean ~ normal(0,1) ;
-	population_logjnd_intercept_mean ~ normal(-1,.5) ;
-	population_logjnd_effect_mean ~ normal(0,1) ;
-	population_logjnd_convention_effect_mean ~ normal(0,1) ;
+	population_pss_intercept_mean ~ student_t(3,0,1) ;
+	population_pss_effect_mean ~ student_t(3,0,1) ;
+	population_pss_convention_effect_mean ~ student_t(3,0,1) ;
+	population_logjnd_intercept_mean ~ student_t(3,-1,.5) ;
+	population_logjnd_effect_mean ~ student_t(3,0,1) ;
+	population_logjnd_convention_effect_mean ~ student_t(3,0,1) ;
 
   //set priors on population parameters
-  logitRhoMean ~ normal(3,3);
-  logKappaMean ~ normal(3,3);
-  logitRhoEffectMean ~ normal(0,3) ;#normal(0,3);
-  logKappaEffectMean ~ normal(0,3) ;#normal(0,3);
+  logitRhoMean ~ student_t(3,3,3);
+  logKappaMean ~ student_t(3,3,3);
+  logitRhoEffectMean ~ student_t(3,0,3) ;#normal(0,3);
+  logKappaEffectMean ~ student_t(3,0,3) ;#normal(0,3);
   // logitRhoSD ~ weibull(2,2);#student_t(4,0,2);
   // logKappaSD ~ weibull(2,2);#student_t(4,0,1);
   // logitRhoEffectSD ~ weibull(2,2);#student_t(4,0,1);

@@ -407,14 +407,14 @@ toj_color_model = stan_model(
 toj_color_post = sampling(
   object = toj_color_model
   , data = toj_color_data_for_stan
-  , iter = 1e2*5
-  , chains = 1
-  , cores = 1
+  , iter = 2e4
+  , chains = 8
+  , cores = 8
   , pars = c('trial_prob', 'p'
-             ,'population_pss_effect_mean'
-             , 'population_logjnd_effect_mean'
-             , 'zpopulation_logjnd_effect_sd'
-             , 'zpopulation_pss_effect_sd' 
+             #,'population_pss_effect_mean'
+             #, 'population_logjnd_effect_mean'
+             #, 'zpopulation_logjnd_effect_sd'
+             #, 'zpopulation_pss_effect_sd' 
              )  # blind to the TOJ effects as I collect data
   , include = FALSE
 )
