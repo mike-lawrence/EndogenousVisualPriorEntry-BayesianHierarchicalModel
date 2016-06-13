@@ -75,7 +75,6 @@ length(unique(a$id))
 #As factor 
 a$id = as.factor(a$id)
 a$sex = as.factor(a$sex)
-a$age = as.factor(a$age)
 a$handedness = as.factor(a$handedness)
 a$block_num = as.factor(a$block_num)
 a$trial_num = as.factor(a$trial_num)
@@ -97,6 +96,7 @@ a$probe_judgement = as.numeric(a$probe_judgement)  # angle of color judgement (0
 a$probe_rt = as.numeric(a$probe_rt)
 a$p_minus_j = as.numeric(a$p_minus_j)
 a$toj_rt = as.numeric(a$toj_rt)
+a$age = as.numeric(a$age)
 
 
 
@@ -209,6 +209,41 @@ ggplot(
   geom_point(size = 4)+
   geom_point(colour = "grey90")
   # +theme(legend.position = "none")  # to be blind to the condition 
+
+# do this
+toj_means_all = ddply(
+  .data = toj_trials
+  , .variables = .(block_bias, soa2)
+  , .fun = function(x){
+    to_return = data.frame(
+      value = mean(x$left_first_TF)
+    )
+    return(to_return)
+  }
+)
+toj_means_all$soa2 = as.numeric(as.character(toj_means_all$soa2))
+
+ggplot(
+  data = toj_means_all
+  , mapping = aes(
+    x = soa2
+    , y =  value
+    , shape = block_bias
+    , linetype = block_bias
+    , group = block_bias
+  )
+)+
+  geom_smooth(
+    method = "glm"
+    , method.args = list(family = "binomial")
+    , formula = y ~ splines::ns(x,2)
+    , se = FALSE
+  )+
+  labs(x = "Stimulus Onset Asynchony (Negative Means First Line Appeared on the Right)", y = "Proportion of 'LEFT' Responses")+
+  geom_point(size = 4)+
+  geom_point(colour = "grey90")
+
+
 
 # get pss and jnds for bewteen subject factors
 toj_by_condition = ddply(
@@ -407,6 +442,7 @@ toj_color_model = stan_model(
 toj_color_post = sampling(
   object = toj_color_model
   , data = toj_color_data_for_stan
+<<<<<<< HEAD
   , iter = 2e4
   , chains = 8
   , cores = 8
@@ -415,6 +451,16 @@ toj_color_post = sampling(
              #, 'population_logjnd_effect_mean'
              #, 'zpopulation_logjnd_effect_sd'
              #, 'zpopulation_pss_effect_sd' 
+=======
+  , iter = 1e2
+  , chains = 1
+  , cores = 1
+  , pars = c('trial_prob', 'p'
+#              ,'population_pss_effect_mean'
+#              , 'population_logjnd_effect_mean'
+#              , 'zpopulation_logjnd_effect_sd'
+#              , 'zpopulation_pss_effect_sd' 
+>>>>>>> origin/master
              )  # blind to the TOJ effects as I collect data
   , include = FALSE
 )
