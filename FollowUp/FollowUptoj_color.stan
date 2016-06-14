@@ -54,6 +54,8 @@ parameters{
   real logKappaProbeEffectMean;
   real logitRhoProbeInteractionEffectMean;
   real logKappaProbeInteractionEffectMean;
+  real logitRhoJudgementTypeInteractionEffectMean;
+  real logKappaJudgementTypeInteractionEffectMean;
   // SDs for population parameters
   real<lower=0,upper=pi()/2> zlogitRhoSD;
   real<lower=0,upper=pi()/2> zlogKappaSD;
@@ -132,8 +134,12 @@ transformed parameters{
     logKappaEffectSD <- tan(zlogKappaEffectSD) ;
     // compute unit-level parameters
     for(n in 1:N_color){
-      logitRho[n] <- logitRhoMean + beta[n,5]*logitRhoSD + condition_probe[n]*logitRhoProbeEffectMean/2;
-      logKappa[n] <- logKappaMean + beta[n,6]*logKappaSD + condition_probe[n]*logKappaProbeEffectMean/2;
+      logitRho[n] <- logitRhoMean + beta[n,5]*logitRhoSD 
+      + condition_probe[n]*logitRhoProbeEffectMean/2 
+      + condition_judgement_type[n]*logitRhoJudgementTypeInteractionEffectMean/2;
+      logKappa[n] <- logKappaMean + beta[n,6]*logKappaSD 
+      + condition_probe[n]*logKappaProbeEffectMean/2
+      + condition_judgement_type[n]*logKappaJudgementTypeInteractionEffectMean/2;
       logitRhoEffect[n] <- logitRhoEffectMean + beta[n,7]*logitRhoEffectSD + condition_probe[n]*logitRhoProbeInteractionEffectMean;  // Don't devide by 2 because devided later 
       logKappaEffect[n] <- logKappaEffectMean + beta[n,8]*logKappaEffectSD + condition_probe[n]*logKappaProbeInteractionEffectMean;
       rho[1,n] <- inv_logit( logitRho[n] - logitRhoEffect[n]/2 ) ;  // unattended is 1, is minus
@@ -180,6 +186,8 @@ model{
   logKappaProbeEffectMean ~ normal(0,3) ;
   logitRhoProbeInteractionEffectMean ~ normal(0,3);
   logKappaProbeInteractionEffectMean ~ normal(0,3);
+  logitRhoJudgementTypeInteractionEffectMean ~ normal(0,3);
+  logKappaJudgementTypeInteractionEffectMean ~ normal(0,3);
   // logitRhoSD ~ weibull(2,2);#student_t(4,0,2);
   // logKappaSD ~ weibull(2,2);#student_t(4,0,1);
   // logitRhoEffectSD ~ weibull(2,2);#student_t(4,0,1);
