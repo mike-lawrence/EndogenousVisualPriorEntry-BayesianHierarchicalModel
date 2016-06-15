@@ -52,6 +52,9 @@ parameters{
   // between subject, probe duration effect
   real logitRhoProbeEffectMean;
   real logKappaProbeEffectMean;
+  real logitRhoJudgmentTypeEffectMean;
+  real logKappaJudgementTypeEffectMean;
+  // between vs. within subject interaction terms
   real logitRhoProbeInteractionEffectMean;
   real logKappaProbeInteractionEffectMean;
   real logitRhoJudgementTypeInteractionEffectMean;
@@ -135,13 +138,17 @@ transformed parameters{
     // compute unit-level parameters
     for(n in 1:N_color){
       logitRho[n] <- logitRhoMean + beta[n,5]*logitRhoSD 
-      + condition_probe[n]*logitRhoProbeEffectMean/2 
-      + condition_judgement_type[n]*logitRhoJudgementTypeInteractionEffectMean/2;
+      + condition_probe[n]*logitRhoProbeEffectMean/2
+      + condition_judgement_type[n]*logitRhoJudgmentTypeEffectMean/2; 
       logKappa[n] <- logKappaMean + beta[n,6]*logKappaSD 
       + condition_probe[n]*logKappaProbeEffectMean/2
-      + condition_judgement_type[n]*logKappaJudgementTypeInteractionEffectMean/2;
-      logitRhoEffect[n] <- logitRhoEffectMean + beta[n,7]*logitRhoEffectSD + condition_probe[n]*logitRhoProbeInteractionEffectMean;  // Don't devide by 2 because devided later 
-      logKappaEffect[n] <- logKappaEffectMean + beta[n,8]*logKappaEffectSD + condition_probe[n]*logKappaProbeInteractionEffectMean;
+      + condition_judgement_type[n]*logKappaJudgmentTypeEffectMean/2; 
+      logitRhoEffect[n] <- logitRhoEffectMean + beta[n,7]*logitRhoEffectSD 
+      + condition_probe[n]*logitRhoProbeInteractionEffectMean
+      + condition_judgement_type[n]*logitRhoJudgementTypeInteractionEffectMean;
+      logKappaEffect[n] <- logKappaEffectMean + beta[n,8]*logKappaEffectSD 
+      + condition_probe[n]*logKappaProbeInteractionEffectMean
+      + condition_judgement_type[n]*logKappaJudgementTypeInteractionEffectMean;
       rho[1,n] <- inv_logit( logitRho[n] - logitRhoEffect[n]/2 ) ;  // unattended is 1, is minus
       rho[2,n] <- inv_logit( logitRho[n] + logitRhoEffect[n]/2 ) ;  // attended is 2, is plus
       kappa[1,n] <- exp( logKappa[n] - logKappaEffect[n]/2  ) ;
@@ -186,6 +193,8 @@ model{
   logKappaProbeEffectMean ~ normal(0,3) ;
   logitRhoProbeInteractionEffectMean ~ normal(0,3);
   logKappaProbeInteractionEffectMean ~ normal(0,3);
+  logitRhoJudgmentTypeEffectMean ~ normal(0,3);
+  logKappaJudgmentTypeEffectMean ~ normal(0,3);
   logitRhoJudgementTypeInteractionEffectMean ~ normal(0,3);
   logKappaJudgementTypeInteractionEffectMean ~ normal(0,3);
   // logitRhoSD ~ weibull(2,2);#student_t(4,0,2);
