@@ -159,6 +159,7 @@ length(unique(a$id))
 
 
 
+
 ##########################################
 ####             TOJ                  #### 
 ##########################################
@@ -180,6 +181,7 @@ toj_trials$soa2[toj_trials$first_arrival == "ball"] = -toj_trials$soa2[toj_trial
 
 ### save toj trials for posterior predictive check
 save(toj_trials, file = "../toj_trials.Rdata")
+
 
 ### Graph participant-wise psychometric functions 
 toj_means_by_id_by_condition = ddply(
@@ -250,7 +252,7 @@ color_trials$attended[ (color_trials$base_probe_dist == 0.8 & color_trials$probe
 color_trials$color_diff_radians = color_trials$color_diff*pi/180
 
 ### save color trials for posterior predicitve check 
-save(color_trials, file = "../color_trials.Rdata")
+# save(color_trials, file = "../color_trials.Rdata")
 
 
 
@@ -273,20 +275,20 @@ toj_color_data_for_stan = list(
 )
   
 toj_color_model = stan_model(
-  file = '../../EndogenousVisualPriorEntry-BayesianHierarchicalModel/Baseball/toj_color.stan'
+  file = './EndogenousVisualPriorEntry-BayesianHierarchicalModel/Baseball/toj_color.stan'
 )
 
 toj_color_post = sampling(
   object = toj_color_model
   , data = toj_color_data_for_stan
-  , iter = 1e2
-  , chains = 1
-  , cores = 1
+  , iter = 1e4*2
+  , chains = 8
+  , cores = 8
   , pars = c('trial_prob', 'p')
   , include = FALSE
 )
 print(toj_color_post)
-
+save(toj_color_post, "toj_color_post_June12th2016_studenttpriors")
 
 
 
