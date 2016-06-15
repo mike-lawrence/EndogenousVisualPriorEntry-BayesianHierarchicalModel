@@ -7,7 +7,7 @@ library(rstan)
 
 
 ##########################################
-####          Data Import           #### 
+####          Data Import             #### 
 ##########################################
 
 check_before_read = function(file){
@@ -115,7 +115,9 @@ a_exp = a[a$block_num %in% c(3,5),]
 
 
 
-#### TOJ ####
+##########################################
+####               TOJ                #### 
+##########################################
 toj_trials = a_exp
 toj_trials = toj_trials[toj_trials$trial_type == "TARGET", ]
 toj_trials$toj_judgement = as.factor(as.character(toj_trials$toj_judgement))
@@ -156,8 +158,6 @@ toj_trials = ddply(
   }
 
 )
-
-
 
 ### SOAs 
 toj_trials$soa2 = toj_trials$soa
@@ -210,91 +210,11 @@ ggplot(
   geom_point(colour = "grey90")
   # +theme(legend.position = "none")  # to be blind to the condition 
 
-# do this
-toj_means_all = ddply(
-  .data = toj_trials
-  , .variables = .(block_bias, soa2)
-  , .fun = function(x){
-    to_return = data.frame(
-      value = mean(x$left_first_TF)
-    )
-    return(to_return)
-  }
-)
-toj_means_all$soa2 = as.numeric(as.character(toj_means_all$soa2))
-
-ggplot(
-  data = toj_means_all
-  , mapping = aes(
-    x = soa2
-    , y =  value
-    , shape = block_bias
-    , linetype = block_bias
-    , group = block_bias
-  )
-)+
-  geom_smooth(
-    method = "glm"
-    , method.args = list(family = "binomial")
-    , formula = y ~ splines::ns(x,2)
-    , se = FALSE
-  )+
-  labs(x = "Stimulus Onset Asynchony (Negative Means First Line Appeared on the Right)", y = "Proportion of 'LEFT' Responses")+
-  geom_point(size = 4)+
-  geom_point(colour = "grey90")
 
 
-
-# get pss and jnds for bewteen subject factors
-toj_by_condition = ddply(
-  .data = toj_trials
-  , .variables = .(id, toj_judgement_type, probe_initial_bias)  
-  , .fun = function(x){
-    fit = glm(
-      formula = left_first_TF~soa2
-      , data = x
-      , family = binomial(link = "probit")
-    )
-    to_return = data.frame(
-      id = x$id[1]
-      , pss = -coef(fit)[1]/coef(fit)[2]
-      , jnd = (  (1-coef(fit)[1])/coef(fit)[2] -  (-1-coef(fit)[1])/coef(fit)[2] ) / 2  # unsure about this
-    )
-    return(to_return)
-  }
-)
-# look at descriptive statistics (mean values) of raw data to compare with parameter estimates of model later
-aggregate(pss ~ toj_judgement_type, data = toj_by_condition, FUN = mean) 
-plot(toj_by_condition$pss) # sense of outliers
-aggregate(jnd ~ toj_judgement_type, data = toj_by_condition, FUN = mean) 
-plot(toj_by_condition$jnd)  # get a sense of outliers
-aggregate(pss ~ probe_initial_bias, data = toj_by_condition, FUN = mean)
-aggregate(jnd ~ probe_initial_bias, data = toj_by_condition, FUN = mean)
-
-# Does probe duration effect PSS indirectly?
-toj_by_probe = ddply(
-  .data = toj_trials
-  , .variables = .(id, onehundredms)  
-  , .fun = function(x){
-    fit = glm(
-      formula = left_first_TF~soa2
-      , data = x
-      , family = binomial(link = "probit")
-    )
-    to_return = data.frame(
-      id = x$id[1]
-      , pss = -coef(fit)[1]/coef(fit)[2]
-      , jnd = (  (1-coef(fit)[1])/coef(fit)[2] -  (-1-coef(fit)[1])/coef(fit)[2] ) / 2  # unsure about this
-    )
-    return(to_return)
-  }
-)
-aggregate(pss~onehundredms, data=toj_by_probe, FUN=mean)
-aggregate(jnd~onehundredms, data=toj_by_probe, FUN=mean)
-
-
-
-#### Color ####
+##########################################
+####          Color                   #### 
+##########################################
 short_angle = function(x, y)
 {
 	return(((x - y + 180) %% 360) - 180)
@@ -326,95 +246,11 @@ color_trials$color_diff_radians = color_trials$p_minus_j*pi/180
 # save
 save(color_trials, file = "FollowUp_color_trials.Rdata")
 
-### mixture model
-# rho and kappa by participant + condition
-source("../fit_uvm.R")
-fitted_by_condition = ddply(
-  .data = color_trials
-  , .variables = .(id, attended)
-  , .fun = function(piece_of_df){
-    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
-    to_return = data.frame(
-      kappa_prime = fit$kappa_prime
-      , rho = fit$rho
-    )
-    return(to_return)
-  }
-  , .progress = 'time'
-)
-aggregate(rho~attended, data = fitted_by_condition, FUN = mean)
-aggregate(kappa_prime~attended, data = fitted_by_condition, FUN = mean)
-
-# rho and kappa by participant + probe duration 
-# to check validity of obetween-subject effectin stan model
-fitted_by_probe_duration = ddply(
-  .data = color_trials
-  , .variables = .(id, onehundredms)
-  , .fun = function(piece_of_df){
-    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
-    to_return = data.frame(
-      kappa_prime = fit$kappa_prime
-      , rho = fit$rho
-    )
-    return(to_return)
-  }
-  , .progress = 'time'
-)
-aggregate(rho~onehundredms, data = fitted_by_probe_duration, FUN = mean)
-aggregate(kappa_prime~onehundredms, data = fitted_by_probe_duration, FUN = mean)
-
-# check for potential interaction between probe duration and rho effect!
-# if no sign of interaction, consider just adding simple effects into model for simplicity
-fitted_by_both_conditions = ddply(
-  .data = color_trials
-  , .variables = .(id, onehundredms, attended)
-  , .fun = function(piece_of_df){
-    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
-    to_return = data.frame(
-      kappa_prime = fit$kappa_prime
-      , rho = fit$rho
-    )
-    return(to_return)
-  }
-  , .progress = 'time'
-)
-aggregate(rho~onehundredms + attended, data = fitted_by_both_conditions, FUN = mean)
-aggregate(kappa_prime~onehundredms + attended, data = fitted_by_both_conditions, FUN = mean)
-
-# rho and kappa by participant
-fitted_all =  ddply(
-  .data = color_trials
-  , .variables = .(id)
-  , .fun = function(piece_of_df){
-    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
-    to_return = data.frame(
-      kappa_prime = fit$kappa_prime
-      , rho = fit$rho
-    )
-    return(to_return)
-  }
-  , .progress = 'time'
-)
-
-# how many participants are perfect across the board?
-perfection_count = sum(fitted_all$rho == 1)
-perfection_count
-perfection_rate = perfection_count/nrow(fitted_all)
-perfection_rate
-
-ggplot(
-  data = fitted_all
-  , mapping = aes(rho)  #, fill = attended)
-)+ 
-  geom_histogram(bins = 50)+
-  labs(x = "Probability of Memory", y = "Frequency")+
-  theme_gray(base_size = 24)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1))
 
 
-
-#### Stan ####
+##########################################
+####          Stan                    #### 
+##########################################
 toj_color_data_for_stan = list(
   N_toj = length(unique(toj_trials$id))
   , L_toj = nrow(toj_trials)
@@ -436,12 +272,12 @@ toj_color_data_for_stan = list(
 
 toj_color_model = stan_model(
  file = '../EndogenousVisualPriorEntry-BayesianHierarchicalModel/FollowUp/FollowUptoj_color.stan'
-  # file = '../EndogenousVisualPriorEntry-BayesianHierarchicalModel/Baseball/toj_color.stan'
   )
 
 toj_color_post = sampling(
   object = toj_color_model
   , data = toj_color_data_for_stan
+<<<<<<< HEAD
 <<<<<<< HEAD
   , iter = 2e4
   , chains = 8
@@ -462,6 +298,12 @@ toj_color_post = sampling(
 #              , 'zpopulation_pss_effect_sd' 
 >>>>>>> origin/master
              )  # blind to the TOJ effects as I collect data
+=======
+  , iter = 1e2*5
+  , chains = 1
+  , cores = 1
+  , pars = c('trial_prob', 'p')  
+>>>>>>> origin/master
   , include = FALSE
 )
 print(toj_color_post)
