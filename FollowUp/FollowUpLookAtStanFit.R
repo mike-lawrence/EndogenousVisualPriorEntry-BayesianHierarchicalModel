@@ -4,9 +4,10 @@ library(ggplot2)
 library(ggmcmc)
 library(CircStats)
 library(grid)
+library(sprintfr)
 
 setwd("~/Documents/TOJ/Follow-Up")
-load("FollowUptoj_color_post_June13th2016")
+load("FollowUptoj_color_post_June14th2016")
 load("FollowUp_color_trials.Rdata")
 load("FollowUp_toj_trials.Rdata")
 
@@ -17,12 +18,6 @@ load("FollowUp_toj_trials.Rdata")
 ############################################################################################
 # convert stanfit sample to dataframe table 
 gg_toj_color_post = ggs(toj_color_post)
-
-# look
-gg_toj_color_post
-
-# look structure
-str(gg_toj_color_post)
 
 # list of parameters to examine
 param_list = c("logitRhoEffectMean"
@@ -103,10 +98,32 @@ for (param in param_list) {
 ############################################################################################
 
 #-------------------------------------- TOJ Actual Data -----------------------------------#
-real_toj = aggregate(left_first_TF ~ soa2 + block_bias, data = toj_trials, FUN = mean)
+real_toj_block_bias = aggregate(left_first_TF ~ soa2 + block_bias, data = toj_trials, FUN = mean)
 real_toj_judgement_type = aggregate(left_first_TF ~ soa2 + toj_judgement_type, data = toj_trials, FUN = mean)
 real_toj_initial_bias = aggregate(left_first_TF ~ soa2 +  probe_initial_bias, data = toj_trials, FUN = mean)
 real_toj_probe_duration = aggregate(left_first_TF ~ soa2 +  onehundredms, data = toj_trials, FUN = mean)
+
+real_toj = data.frame(
+  SOA = rep(real_toj_block_bias$soa2,4)
+  , factor = c(
+    rep(names(real_toj_block_bias)[2], 20)
+    , rep(names(real_toj_judgement_type)[2], 20)
+    , rep(names(real_toj_initial_bias)[2], 20)
+    , rep(names(real_toj_probe_duration)[2], 20)
+    )
+  , level = c(
+    as.character(real_toj_block_bias$block_bias)
+    , as.character(real_toj_judgement_type$toj_judgement_type)
+    , as.character(real_toj_initial_bias$probe_initial_bias)
+    , as.character(real_toj_probe_duration$onehundredms)
+    ) 
+  , left_first_TF = c(
+    real_toj_block_bias$left_first_TF
+    , real_toj_judgement_type$left_first_TF
+    , real_toj_initial_bias$left_first_TF
+    , real_toj_probe_duration$left_first_TF
+  )
+)
 #-------------------------------------- TOJ Actual Data -----------------------------------#
 
 
@@ -135,221 +152,126 @@ get_condition_mean_sample = function(intercept, effect, add, space){
 }
 
 ### Get PSS Parameters
-# pss intercept mean
 pss_intercept_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_pss_intercept_mean",]$value
-# pss effect mean
 pss_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_pss_effect_mean",]$value
-# pss judgement type effect mean
 pss_judgement_type_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_pss_judgement_type_effect_mean",]$value
-# pss probe initial bias effect mean
 pss_initial_bias_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_pss_initial_bias_effect_mean",]$value
-# pss probe duration effect mean
 pss_probe_duration_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_pss_probe_effect_mean",]$value
 
-
-# pss attend right
 pss_right_mean_reps = get_condition_mean_sample(pss_intercept_mean, pss_effect_mean, TRUE, "null")
-
-# pss attend left
 pss_left_mean_reps = get_condition_mean_sample(pss_intercept_mean, pss_effect_mean, FALSE, "null")
 
-# pss judgement type first
 pss_first_mean_reps = get_condition_mean_sample(pss_intercept_mean, pss_judgement_type_effect_mean, FALSE, "null")
-
-# pss judgement type second
 pss_second_mean_reps = get_condition_mean_sample(pss_intercept_mean, pss_judgement_type_effect_mean, TRUE, "null")
 
-# pss initial bias right
 pss_initial_right_mean_reps = get_condition_mean_sample(pss_intercept_mean, pss_initial_bias_effect_mean, FALSE, "null")
-
-# pss initial bias second
 pss_initial_left_mean_reps = get_condition_mean_sample(pss_intercept_mean, pss_initial_bias_effect_mean, TRUE, "null")
 
-# pss probe duration short (100 ms)
 pss_short_mean_reps = get_condition_mean_sample(pss_intercept_mean, pss_probe_duration_effect_mean, FALSE, "null")
-
-# pss probe duration long (200 ms)
 pss_long_mean_reps = get_condition_mean_sample(pss_intercept_mean, pss_probe_duration_effect_mean, TRUE, "null")
 
 ### Get JND Parameters
-# jnd intercept mean
 jnd_intercept_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_logjnd_intercept_mean",]$value
-# jnd effect mean
 jnd_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_logjnd_effect_mean",]$value
-# pss judgement type effect mean
 jnd_judgement_type_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_logjnd_judgement_type_effect_mean",]$value
-# jnd probe initial bias effect mean
 jnd_initial_bias_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_logjnd_initial_bias_effect_mean",]$value
-# jnd probe duration effect mean
 jnd_probe_duration_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_logjnd_probe_effect_mean",]$value
 
-# jnd attend right
 jnd_right_mean_reps = get_condition_mean_sample( jnd_intercept_mean, jnd_effect_mean, TRUE, "log")
-
-# jnd attend left
 jnd_left_mean_reps = get_condition_mean_sample( jnd_intercept_mean, jnd_effect_mean, FALSE, "log")
 
-# jnd judgement type first
 jnd_first_mean_reps = get_condition_mean_sample( jnd_intercept_mean, jnd_judgement_type_effect_mean, FALSE, "log")
-
-# jnd judgement type second
 jnd_second_mean_reps = get_condition_mean_sample( jnd_intercept_mean, jnd_judgement_type_effect_mean, TRUE, "log")
 
-# jnd initial bias right
 jnd_initial_right_mean_reps = get_condition_mean_sample( jnd_intercept_mean,  jnd_initial_bias_effect_mean, FALSE, "log")
-
-# jnd initial bias left
 jnd_initial_left_mean_reps = get_condition_mean_sample( jnd_intercept_mean,  jnd_initial_bias_effect_mean, TRUE, "log")
 
-# jnd probe duration short (100 ms)
 jnd_short_mean_reps = get_condition_mean_sample( jnd_intercept_mean,  jnd_probe_duration_effect_mean, FALSE, "log")
-
-# jnd probe duration long (200 ms)
 jnd_long_mean_reps = get_condition_mean_sample( jnd_intercept_mean,  jnd_probe_duration_effect_mean, TRUE, "log")
 #-------------------------------------- TOJ Simulated Data --------------------------------#
 
 
 #-------------------------------------- Do TOJ PPC ----------------------------------------#
 SOAs = c(-250, -150, -100, -50, -17, 17, 50, 100, 150, 250)
-# right
-plot(SOAs, pnorm( SOAs, mean = pss_right_mean_reps[1], sd = jnd_right_mean_reps[1]), main = "attend right", ylab = "left proportion", xlab = "SOA" , col = alpha("turquoise", 0.5) )
-for (i in 2:length(pss_right_mean_reps)) {
-  points(SOAs, pnorm( SOAs, mean = pss_right_mean_reps[i], sd = jnd_right_mean_reps[i]), col = alpha("turquoise", 0.5) )
-}
-# real right
-real_right = real_toj[real_toj$block_bias == "RIGHT",]$left_first_TF
-points(SOAs,real_right, col = "blue", pch = 15 )
 
-# left
-plot(SOAs, pnorm( SOAs, mean = pss_left_mean_reps[1], sd = jnd_left_mean_reps[1]), main = "attend left", ylab = "left proportion", xlab = "SOA", col = alpha("pink", 0.5)  )
-for (i in 2:length(pss_left_mean_reps)) {
-  points(SOAs, pnorm( SOAs, mean = pss_left_mean_reps[i], sd = jnd_left_mean_reps[i]), col = alpha("pink", 0.5)   )
-}
-# real left
-real_left = real_toj[real_toj$block_bias == "LEFT",]$left_first_TF
-points(SOAs, real_left, col = "red", pch = 15)
+do_toj_ppc = function(pss, jnd, main, facteur, level) {
+  df = NULL
+  for (i in 1:length(pss)) {
+    df_temp = data.frame(SOA = SOAs, left_prop = pnorm( SOAs, mean = pss[i], sd = jnd[i]) )
+    df = rbind(df, df_temp)
+  }
+  
+  gg = ggplot(data = df, aes(x = SOA, y = left_prop))+
+    geom_point(alpha = 0.3, colour = "turquoise")+
+    ylab("left proportion")+
+    xlab("SOA")+
+    ggtitle(main)
+  
+  real = data.frame(SOA = SOAs, left_prop = real_toj[real_toj[,"factor"] == facteur & real_toj[,"level"] == level,]$left_first_TF) 
+  
+  gg = gg + geom_point(data = real, aes(x = SOA, y = left_prop), colour = "blue")
 
-# toj judgement type first
-plot(SOAs, pnorm( SOAs, mean = pss_first_mean_reps[1], sd = jnd_first_mean_reps[1]), main = "which came first?", ylab = "left proportion", xlab = "SOA", col = alpha("turquoise", 0.5) )
-for (i in 2:length(pss_first_mean_reps)) {
-  points(SOAs, pnorm(SOAs, mean = pss_first_mean_reps[i], sd = jnd_first_mean_reps[i]), ylab = "left proportion", xlab = "SOA", col = alpha("turquoise", 0.5) )
+  return(gg)
 }
-# real first
-real_first = real_toj_judgement_type[real_toj_judgement_type$toj_judgement_type == "first",]$left_first_TF
-points(SOAs,real_first, col = "blue", pch = 15 )
 
-# toj judgement type second
-plot( SOAs, pnorm( SOAs, mean = pss_second_mean_reps[1], sd = jnd_second_mean_reps[1]), main = "which came second?", ylab = "left proportion", xlab = "SOA", col = alpha("pink", 0.5) )
-for (i in 2:length(pss_second_mean_reps)) {
-  points( SOAs, pnorm( SOAs, mean = pss_second_mean_reps[i], sd = jnd_second_mean_reps[i]), col = alpha("pink", 0.5) )
-}
-# real second
-real_second = real_toj_judgement_type[real_toj_judgement_type$toj_judgement_type=="second",]$left_first_TF
-points(SOAs,real_second, col = "red", pch = 15 )
+do_toj_ppc(pss_right_mean_reps, jnd_right_mean_reps, "attend right", "block_bias", "RIGHT")
 
-# toj initial bias right
-plot(SOAs, pnorm( SOAs, mean = pss_initial_right_mean_reps[1], sd = jnd_initial_right_mean_reps[1]), main = "initial right", ylab = "left proportion", xlab = "SOA", col = alpha("turquoise", 0.5) )
-for (i in 2:length(pss_initial_right_mean_reps)) {
-  points(SOAs, pnorm(SOAs, mean = pss_initial_right_mean_reps[i], sd = jnd_initial_right_mean_reps[i]), ylab = "left proportion", xlab = "SOA", col = alpha("turquoise", 0.5) )
-}
-# real initial right
-real_initial_right = real_toj_initial_bias[real_toj_initial_bias$probe_initial_bias== "RIGHT",]$left_first_TF
-points(SOAs,real_initial_right, col = "blue", pch = 15 )
+do_toj_ppc(pss_left_mean_reps, jnd_left_mean_reps, "attend left", "block_bias", "LEFT")
 
-# toj initial bias left
-plot(SOAs, pnorm( SOAs, mean = pss_initial_left_mean_reps[1], sd = jnd_initial_left_mean_reps[1]), main = "initial left", ylab = "left proportion", xlab = "SOA", col = alpha("pink", 0.5) )
-for (i in 2:length(pss_initial_left_mean_reps)) {
-  points(SOAs, pnorm(SOAs, mean = pss_initial_left_mean_reps[i], sd = jnd_initial_left_mean_reps[i]), ylab = "left proportion", xlab = "SOA", col = alpha("pink", 0.5) )
-}
-# real initial left
-real_initial_left = real_toj_initial_bias[real_toj_initial_bias$probe_initial_bias== "LEFT",]$left_first_TF
-points(SOAs,real_initial_left, col = "red", pch = 15 )
+do_toj_ppc(pss_first_mean_reps, jnd_first_mean_reps, "which came first?", "toj_judgement_type", "first")
 
-# toj probe duration short 
-plot(SOAs, pnorm( SOAs, mean = pss_short_mean_reps[1], sd = jnd_short_mean_reps[1]), main = "short probe duration", ylab = "left proportion", xlab = "SOA", col = alpha("turquoise", 0.5) )
-for (i in 2:length(pss_short_mean_reps)) {
-  points(SOAs, pnorm(SOAs, mean = pss_short_mean_reps[i], sd = jnd_short_mean_reps[i]), ylab = "left proportion", xlab = "SOA", col = alpha("turquoise", 0.5) )
-}
-# real short
-real_short = real_toj_probe_duration[real_toj_probe_duration$onehundredms== TRUE,]$left_first_TF
-points(SOAs,real_short, col = "blue", pch = 15 )
+do_toj_ppc(pss_second_mean_reps, jnd_second_mean_reps, "which came second?", "toj_judgement_type", "second")
 
-# toj probe duration long
-plot(SOAs, pnorm( SOAs, mean = pss_long_mean_reps[1], sd = jnd_long_mean_reps[1]), main = "long probe duration", ylab = "left proportion", xlab = "SOA", col = alpha("pink", 0.5) )
-for (i in 2:length(pss_long_mean_reps)) {
-  points(SOAs, pnorm(SOAs, mean = pss_long_mean_reps[i], sd = jnd_long_mean_reps[i]), ylab = "left proportion", xlab = "SOA", col = alpha("pink", 0.5) )
-}
-# real initial left
-real_long = real_toj_probe_duration[real_toj_probe_duration$onehundredms == FALSE,]$left_first_TF
-points(SOAs,real_long, col = "red", pch = 15 )
+do_toj_ppc(pss_initial_right_mean_reps, jnd_initial_right_mean_reps, "initial right", "probe_initial_bias", "RIGHT")
+
+do_toj_ppc(pss_initial_left_mean_reps, jnd_initial_left_mean_reps, "initial left", "probe_initial_bias", "LEFT")
+
+do_toj_ppc(pss_short_mean_reps, jnd_short_mean_reps, "short probe duration", "onehundredms", "TRUE")
+
+do_toj_ppc(pss_long_mean_reps, jnd_long_mean_reps, "long probe duration", "onehundredms", "FALSE")
 #-------------------------------------- Do TOJ PPC ----------------------------------------#
 
 
 #-------------------------------------- Color Actual Data ---------------------------------#
 hist(color_trials[color_trials$attended == TRUE,]$color_diff_radians, breaks = 30, freq = F, col = rgb(.1,.1,.1,.5))
 hist(color_trials[color_trials$attended == FALSE,]$color_diff_radians, breaks = 30, freq = F, col = rgb(.9,.9,.9,.5), add = T)
-# interaction: attention and probe duration
-real_color = aggregate(color_diff_radians ~ attended + onehundredms, data = color_trials, FUN  = mean)
 #-------------------------------------- Color Actual Data ---------------------------------#
 
 
 #-------------------------------------- Color Simulated Data ------------------------------#
-# rho intercept mean
 rho_intercept_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "logitRhoMean",]$value
-# rho effect mean
 rho_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "logitRhoEffectMean",]$value
-# rho probe duration effect mean
 rho_probe_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "logitRhoProbeEffectMean",]$value
-# rho probe duration interaction effect mean
 rho_probe_interaction_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "logitRhoProbeInteractionEffectMean",]$value
 
-# rho attend with probe short 
 rho_attend_short = plogis(rho_intercept_mean - rho_probe_effect_mean/2  + (rho_effect_mean - rho_probe_interaction_effect_mean)/2)
-# sample from posterior 
 rho_attend_short_reps = sample(rho_attend_short, 50, replace = T)
 
-# rho unattend with probe short 
 rho_unattend_short = plogis(rho_intercept_mean - rho_probe_effect_mean/2  - (rho_effect_mean - rho_probe_interaction_effect_mean)/2)
-# sample from posterior 
 rho_unattend_short_reps = sample(rho_unattend_short, 50, replace = T)
 
-# rho attend with probe long
 rho_attend_long = plogis(rho_intercept_mean  + rho_probe_effect_mean/2 + (rho_effect_mean + rho_probe_interaction_effect_mean)/2)
-# sample from posterior 
 rho_attend_long_reps = sample(rho_attend_long, 50, replace = T)
 
-# rho unattend with probe long
 rho_unattend_long = plogis(rho_intercept_mean  + rho_probe_effect_mean/2 - (rho_effect_mean + rho_probe_interaction_effect_mean)/2)
-# sample from posterior 
 rho_unattend_long_reps = sample(rho_unattend_long, 50, replace = T)
 
 ### Get Kappa Parameters
 kappa_intercept_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "logKappaMean",]$value
-# kappa effect mean
 kappa_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "logKappaEffectMean",]$value
-# kappa probe duration effect mean
 kappa_probe_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "logKappaProbeEffectMean",]$value
-# kappa probe duration interaction effect mean
 kappa_probe_interaction_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "logKappaProbeInteractionEffectMean",]$value
 
-# rho attend with probe short 
 kappa_attend_short = exp(kappa_intercept_mean - kappa_probe_effect_mean/2  + (kappa_effect_mean - kappa_probe_interaction_effect_mean)/2)
-# sample from posterior 
 kappa_attend_short_reps = sample(kappa_attend_short, 50, replace = T)
 
-# kappa unattend with probe short 
 kappa_unattend_short = exp(kappa_intercept_mean - kappa_probe_effect_mean/2  - (kappa_effect_mean - kappa_probe_interaction_effect_mean)/2)
-# sample from posterior 
 kappa_unattend_short_reps = sample(kappa_unattend_short, 50, replace = T)
 
-# kappa attend with probe long
 kappa_attend_long = exp(kappa_intercept_mean  + kappa_probe_effect_mean/2 + (kappa_effect_mean + kappa_probe_interaction_effect_mean)/2)
-# sample from posterior 
 kappa_attend_long_reps = sample(kappa_attend_long, 50, replace = T)
 
-# kappa unattend with probe long
 kappa_unattend_long = exp(kappa_intercept_mean  + kappa_probe_effect_mean/2 - (kappa_effect_mean + kappa_probe_interaction_effect_mean)/2)
-# sample from posterior 
 kappa_unattend_long_reps = sample(kappa_unattend_long, 50, replace = T)
 #-------------------------------------- Color Simulated Data ------------------------------#
 
@@ -360,61 +282,44 @@ plot( seq(-pi, pi, pi/200), (rho_unattend_short_reps[1])*dvm(seq(-pi, pi, pi/200
       + (1-rho_unattend_short_reps[1]) * dunif(seq(-pi, pi, pi/200), -pi, pi)
       , xlab = "radian deviations", ylab = "density")
 
-# unattend + short
-# sample from distributions
-hist( 
-  c( rvm(1000*(rho_unattend_short_reps[1]), pi, kappa_unattend_short_reps[1]) - pi , runif(1000*(1- rho_unattend_short_reps[1]), -pi, pi) )
-  , breaks = 50, col = rgb(.1,.1,.1,.1), xlim = c(-pi, pi), freq = F, ylim = c(0, 2)
-  , xlab = "radian deviations", main = "unattend_shorted")
-# cycle
-for (i in 2:length(kappa_unattend_short_reps)) {
-  hist( 
-    c( rvm(1000*(rho_unattend_short_reps[i]), pi, kappa_unattend_short_reps[i]) - pi , runif(1000*(1- rho_unattend_short_reps[i]), -pi, pi) )
-    , breaks = 50, col = rgb(.1,.1,.1,.1), xlim = c(-pi, pi), freq = F, add = T)
+do_color_ppc = function(rho, kappa, main, attention_level, probe_level) {
+  df = NULL
+  for (i in 1:length(rho)) {
+    color_dev = c( 
+      rvm(1000*(rho[i]), pi, kappa[i]) - pi
+      , runif(1000*(1- rho[i]), -pi, pi) 
+    )
+    df_temp = data.frame(
+      repi = rep(i, length(color_dev))
+      , color_dev = color_dev
+    )
+    df = rbind(df, df_temp)
+  }
+  
+  gg = ggplot(data = df, aes(color_dev, group = factor(repi)))+
+    geom_density(colour = "turquoise")+
+    xlab("radian deviation")+
+    ggtitle(main)+
+    theme(legend.position = "none")
+  
+  color_dev = color_trials[color_trials[,"attended"]==attention_level & color_trials[,"onehundredms"]==probe_level,]$color_diff_radians
+  real = data.frame(
+    repi = rep(i, length(color_dev))
+    , color_dev = color_dev
+  )
+  
+  gg = gg + geom_density(data = real, aes(color_dev, group = factor(repi)), colour = "blue")
+  
+  return(gg)
 }
-hist(color_trials[color_trials$attended == FALSE & color_trials$onehundredms == TRUE,]$color_diff_radians, breaks = 50, freq = F, col = rgb(.9,.9,.9,.5), add = T)
 
-# attend + short
-# sample from distributions
-hist( 
-  c( rvm(1000*(rho_attend_short_reps[1]), pi, kappa_attend_short_reps[1]) - pi , runif(1000*(1- rho_attend_short_reps[1]), -pi, pi) )
-  , breaks = 50, col = rgb(.1,.1,.1,.1), xlim = c(-pi, pi), freq = F, ylim = c(0, 2)
-  , xlab = "radian deviations", main = "attend_shorted")
-# cycle
-for (i in 2:length(kappa_attend_short_reps)) {
-  hist( 
-    c( rvm(1000*(rho_attend_short_reps[i]), pi, kappa_attend_short_reps[i]) - pi , runif(1000*(1- rho_attend_short_reps[i]), -pi, pi) )
-    , breaks = 50, col = rgb(.1,.1,.1,.1), xlim = c(-pi, pi), freq = F, add = T)
-}
-hist(color_trials[color_trials$attended == TRUE & color_trials$onehundredms == TRUE,]$color_diff_radians, breaks = 50, freq = F, col = rgb(.9,.9,.9,.5), add = T)
+do_color_ppc(rho_unattend_short_reps, kappa_unattend_short_reps, "unattend short", FALSE, TRUE)
 
-# unattend + long
-# sample from distributions
-hist( 
-  c( rvm(1000*(rho_unattend_long_reps[1]), pi, kappa_unattend_long_reps[1]) - pi , runif(1000*(1- rho_unattend_long_reps[1]), -pi, pi) )
-  , breaks = 50, col = rgb(.1,.1,.1,.1), xlim = c(-pi, pi), freq = F, ylim = c(0, 2)
-  , xlab = "radian deviations", main = "unattend_longed")
-# cycle
-for (i in 2:length(kappa_unattend_long_reps)) {
-  hist( 
-    c( rvm(1000*(rho_unattend_long_reps[i]), pi, kappa_unattend_long_reps[i]) - pi , runif(1000*(1- rho_unattend_long_reps[i]), -pi, pi) )
-    , breaks = 50, col = rgb(.1,.1,.1,.1), xlim = c(-pi, pi), freq = F, add = T)
-}
-hist(color_trials[color_trials$attended == FALSE & color_trials$onehundredms == FALSE,]$color_diff_radians, breaks = 50, freq = F, col = rgb(.9,.9,.9,.5), add = T)
+do_color_ppc(rho_attend_short_reps, kappa_unattend_short_reps, "attend short", TRUE, TRUE)
 
-# attend + long
-# sample from distributions
-hist( 
-  c( rvm(1000*(rho_attend_long_reps[1]), pi, kappa_attend_long_reps[1]) - pi , runif(1000*(1- rho_attend_long_reps[1]), -pi, pi) )
-  , breaks = 50, col = rgb(.1,.1,.1,.1), xlim = c(-pi, pi), freq = F, ylim = c(0, 2)
-  , xlab = "radian deviations", main = "attend_longed")
-# cycle
-for (i in 2:length(kappa_attend_long_reps)) {
-  hist( 
-    c( rvm(1000*(rho_attend_long_reps[i]), pi, kappa_attend_long_reps[i]) - pi , runif(1000*(1- rho_attend_long_reps[i]), -pi, pi) )
-    , breaks = 50, col = rgb(.1,.1,.1,.1), xlim = c(-pi, pi), freq = F, add = T)
-}
-hist(color_trials[color_trials$attended == TRUE & color_trials$onehundredms == FALSE,]$color_diff_radians, breaks = 50, freq = F, col = rgb(.9,.9,.9,.5), add = T)
+do_color_ppc(rho_unattend_long_reps, kappa_unattend_long_reps, "unattend long", FALSE, FALSE)
+
+do_color_ppc(rho_attend_long_reps, kappa_attend_long_reps,"attend long", TRUE, FALSE)
 #-------------------------------------- Do Color PPC --------------------------------------#
 
 
@@ -422,13 +327,6 @@ hist(color_trials[color_trials$attended == TRUE & color_trials$onehundredms == F
 ############################################################################################
 ####                                       Analysis                                     ####
 ############################################################################################
-# look at parameter distribution estimates  
-toj_color_post
-
-# visualize
-plot(toj_color_post)
-
-# HDI and mode functions
 get_95_HDI = function(y) {
   HDI = HPDinterval( as.mcmc( as.vector(y) ), prob = .95 )
   Den = density( as.vector(y) )
@@ -511,19 +409,28 @@ betas$participant = rep(c(1:26), times = 8, each = nrow(betas2))
 
 
 #---------------------------- Rho vs. PSS Effects -----------------------------------------#
-psseffect2 = data.frame(value = ex_toj_color_post$population_pss_effect_mean)
-psseffect2$iteration = rownames(psseffect2)
-psseffect = melt( psseffect2 )$value
+extract_samples = function(parameter, SD = FALSE) {
+  if (SD) {
+    df2 = data.frame(value = tan(ex_toj_color_post[[parameter]]))
+  } else {
+    df2 = data.frame(value = ex_toj_color_post[[parameter]])
+  }
+  df2$iteration = rownames(df2)
+  df = melt( df2 )$value
+  return(df)
+}
 
-psseffectsd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_pss_effect_sd))
-psseffectsd2$iteration = rownames(psseffectsd2)
-psseffectsd = melt( psseffectsd2 )$value
+psseffect = extract_samples("population_pss_effect_mean")
 
-pssinteraction2 = data.frame(value = ex_toj_color_post$population_pss_probe_interaction_effect_mean)
-pssinteraction2$iteration = rownames(pssinteraction2)
-pssinteraction = melt(pssinteraction2)$value
+psseffectsd = extract_samples("zpopulation_pss_effect_sd", TRUE)
+
+pssinteraction = extract_samples("population_pss_probe_interaction_effect_mean")
+
+pssjudgementinteraction = extract_samples("population_pss_judgement_type_interaction_effect_mean")
 
 probefactor = ifelse(aggregate(onehundredms ~ id, data = color_trials, unique)$onehundred, -1, 1)
+
+judgementfactor = ifelse(aggregate(toj_judgement_type ~ id, data = toj_trials, FUN = unique)$toj_judgement_type == "first", -1, 1)
 
 psseffect_ids = ddply(
   .data = betas
@@ -531,36 +438,28 @@ psseffect_ids = ddply(
   , .fun = function(x){
     i = unique(x$participant)
     x_use = x[x$parameter ==  "population_pss_effect_mean",]$value
-    psseffect = (median(psseffect)  + median(psseffectsd)*median(x_use) + median(pssinteraction)*probefactor[i])/2
-    df = data.frame(psseffect, probefactor[i])
-    names(df) = c("psseffect", "probefactor")
+    psseffect = (median(psseffect)  + median(psseffectsd)*median(x_use) 
+                 + median(pssinteraction)*probefactor[i]
+                 + median(pssjudgementinteraction)*judgementfactor[i])/2
+    df = data.frame(psseffect, probefactor[i], judgementfactor[i])
+    names(df) = c("psseffect", "probefactor", "judgementfactor")
     return(df)
   }
 )
 
-logitrhomean2 = data.frame(value = ex_toj_color_post$logitRhoMean)
-logitrhomean2$iteration = rownames(logitrhomean2)
-logitrhomean = melt( logitrhomean2 )$value
+logitrhomean = extract_samples("logitRhoMean")
 
-logitrhosd2 = data.frame(value = tan(ex_toj_color_post$zlogitRhoSD))
-logitrhosd2$iteration = rownames(logitrhosd2)
-logitrhosd = melt( logitrhosd2 )$value
+logitrhosd = extract_samples("zlogitRhoSD", TRUE)
 
-logitrhoeffect2 = data.frame(value = ex_toj_color_post$logitRhoEffectMean)
-logitrhoeffect2$iteration = rownames(logitrhoeffect2)
-logitrhoeffect = melt( logitrhoeffect2 )$value
+logitrhoeffect = extract_samples("logitRhoEffectMean")
 
-logitrhoeffectsd2 = data.frame(value = tan(ex_toj_color_post$zlogitRhoEffectSD))
-logitrhoeffectsd2$iteration = rownames(logitrhoeffectsd2)
-logitrhoeffectsd = melt( logitrhoeffectsd2 )$value
+logitrhoeffectsd = extract_samples("zlogitRhoEffectSD", TRUE)
 
-logitrhoprobeeffect2 = data.frame(value = ex_toj_color_post$logitRhoProbeEffectMean)
-logitrhoprobeeffect2$iteration = rownames(logitrhoprobeeffect2)
-logitrhoprobeeffect = melt( logitrhoprobeeffect2 )$value
+logitrhoprobeeffect = extract_samples("logitRhoProbeEffectMean")
 
-logitrhointeractioneffect2 = data.frame(value = ex_toj_color_post$logitRhoProbeInteractionEffectMean)
-logitrhointeractioneffect2$iteration = rownames(logitrhointeractioneffect2)
-logitrhointeractioneffect = melt( logitrhointeractioneffect2 )$value
+logitrhointeractioneffect = extract_samples("logitRhoProbeInteractionEffectMean")
+
+# logitrhojudgementinteractioneffect = extract_samples("logitRhoJudgementTypeInteractionEffectMean")
 
 rhoeffect_ids = ddply(
   .data = betas
@@ -576,11 +475,9 @@ rhoeffect_ids = ddply(
 )
 
 # psseffect_v_rhoeffect2 = merge(rhoeffect_ids, psseffect_ids)
-
+# 
 # # get rid of outliers
-# outlier_points = psseffect_v_rhoeffect2[psseffect_v_rhoeffect2$logitrhoeffect > 0.875
-#                                         | psseffect_v_rhoeffect2$logitrhoeffect < 0.125
-#                                         ,]
+# outlier_points = psseffect_v_rhoeffect2[psseffect_v_rhoeffect2$psseffect > 0.035,]
 # 
 # psseffect_v_rhoeffect = psseffect_v_rhoeffect2[!(psseffect_v_rhoeffect2$logitrhoeffect %in% outlier_points$logitrhoeffect),]
 
@@ -590,8 +487,9 @@ psseffect_v_rhoeffect = merge(rhoeffect_ids, psseffect_ids)
 ggplot(data = psseffect_v_rhoeffect, aes(y =psseffect, x = logitrhoeffect, colour = factor(probefactor), shape = factor(probefactor)))+
   scale_y_continuous(name = "Half PSS Effect Mean (Normalized)")+
   scale_x_continuous(name = "Logit \u03C1 Effect Mean")+
+  scale_colour_discrete(name = "Probe\nDuration", labels = c("Short", "Long"))+
+  scale_shape_discrete(name = "Probe\nDuration",labels = c("Short", "Long") )+
   geom_point(size = 3)+
-  # geom_smooth(method = "lm", se = FALSE, size = 1)+
   geom_smooth(
     data = psseffect_v_rhoeffect[psseffect_v_rhoeffect$probefactor == +1,]
     , aes(y = psseffect, x = logitrhoeffect)
@@ -604,11 +502,10 @@ ggplot(data = psseffect_v_rhoeffect, aes(y =psseffect, x = logitrhoeffect, colou
   geom_hline(yintercept = 0, linetype = 2, size = 1)+
 #   geom_point(data = outlier_points, aes(y = psseffect, x = logitrhoeffect), size = 3)+
 #   geom_point(data = outlier_points, aes(y = psseffect, x = logitrhoeffect), size = 1.5, colour = "grey90")+
-  # annotate("text", label = paste("r=",cor_plot), x = 0.625, y = -0.15, size = 8)+
   theme_gray(base_size = 30)+
   theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , legend.position = "none")
+        ,panel.grid.minor = element_line(size = 1))
+  
 
 ### Violin
 ggplot(
@@ -633,29 +530,17 @@ get_95_HDI( pos_corr[pos_corr$parameter == "value.2.7",]$value)
 
 
 #---------------------------- Kappa vs. PSS Effects ---------------------------------------#
-logkappamean2 = data.frame(value = ex_toj_color_post$logKappaMean)
-logkappamean2$iteration = rownames(logkappamean2)
-logkappamean = melt( logkappamean2 )$value
+logkappamean = extract_samples("logKappaMean")
 
-logkappasd2 = data.frame(value = tan(ex_toj_color_post$zlogKappaSD))
-logkappasd2$iteration = rownames(logkappasd2)
-logkappasd = melt( logkappasd2 )$value
+logkappasd = extract_samples("zlogKappaSD", TRUE)
 
-logkappaeffect2 = data.frame(value = ex_toj_color_post$logKappaEffectMean)
-logkappaeffect2$iteration = rownames(logkappaeffect2)
-logkappaeffect = melt( logkappaeffect2 )$value
+logkappaeffect = extract_samples("logKappaEffectMean")
 
-logkappaeffectsd2 = data.frame(value = tan(ex_toj_color_post$zlogKappaEffectSD))
-logkappaeffectsd2$iteration = rownames(logkappaeffectsd2)
-logkappaeffectsd = melt( logkappaeffectsd2 )$value
+logkappaeffectsd = extract_samples("zlogKappaEffectSD", TRUE)
 
-logkappaprobeeffect2 = data.frame(value = ex_toj_color_post$logKappaProbeEffectMean)
-logkappaprobeeffect2$iteration = rownames(logkappaprobeeffect2)
-logkappaprobeeffect = melt( logkappaprobeeffect2 )$value
+logkappaprobeeffect = extract_samples("logKappaProbeEffectMean")
 
-logkappainteractioneffect2 = data.frame(value = ex_toj_color_post$logKappaProbeInteractionEffectMean)
-logkappainteractioneffect2$iteration = rownames(logkappainteractioneffect2)
-logkappainteractioneffect = melt( logkappainteractioneffect2 )$value
+logkappainteractioneffect = extract_samples("logKappaProbeInteractionEffectMean")
 
 kappaeffect_ids = ddply(
   .data = betas
@@ -673,21 +558,21 @@ kappaeffect_ids = ddply(
 psseffect_v_kappaeffect2 = merge(kappaeffect_ids, psseffect_ids)
 
 # get rid of outliers
-outlier_points = psseffect_v_kappaeffect2[psseffect_v_kappaeffect2$psseffect > 0.035
-                                        ,]
+outlier_points = psseffect_v_kappaeffect2[psseffect_v_kappaeffect2$psseffect > 0.035,]
 
 psseffect_v_kappaeffect = psseffect_v_kappaeffect2[!(psseffect_v_kappaeffect2$logkappaeffect %in% outlier_points$logkappaeffect),]
 
 # plot
-ggplot(data = psseffect_v_kappaeffect, aes(y =psseffect, x = logkappaeffect, colour = probefactor))+
+ggplot(data = psseffect_v_kappaeffect, aes(y =psseffect, x = logkappaeffect, colour = factor(probefactor), shape = factor(probefactor)))+
   scale_y_continuous(name = "Half PSS Effect Mean (Normalized)")+
   scale_x_continuous(name = "Log \u03BA Effect Mean")+
+  scale_colour_discrete(name = "Probe\nDuration", labels = c("Short", "Long"))+
+  scale_shape_discrete(name = "Probe\nDuration",labels = c("Short", "Long") )+
   geom_point(size = 3)+
-  # geom_smooth(method = "lm", se = FALSE, size = 1)+
-    geom_smooth(
-      data = psseffect_v_kappaeffect[psseffect_v_kappaeffect$probefactor == +1,]
-      , aes(y = psseffect, x = logkappaeffect)
-      , method = "lm", se = FALSE, size = 1, linetype = "dotted")+
+  geom_smooth(
+    data = psseffect_v_kappaeffect[psseffect_v_kappaeffect$probefactor == +1,]
+    , aes(y = psseffect, x = logkappaeffect)
+    , method = "lm", se = FALSE, size = 1, linetype = "dotted")+
   geom_smooth(
     data = psseffect_v_kappaeffect[psseffect_v_kappaeffect$probefactor == -1,]
     , aes(y = psseffect, x = logkappaeffect)
@@ -696,11 +581,9 @@ ggplot(data = psseffect_v_kappaeffect, aes(y =psseffect, x = logkappaeffect, col
   geom_vline(xintercept = 0, linetype = 2, size = 1)+
     geom_point(data = outlier_points, aes(y = psseffect, x = logkappaeffect), size = 3)+
     geom_point(data = outlier_points, aes(y = psseffect, x = logkappaeffect), size = 1.5, colour = "grey90")+
-  # annotate("text", label = paste("r=",cor_plot), x = 0.625, y = -0.15, size = 8)+
   theme_gray(base_size = 30)+
   theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , legend.position = "none")
+        ,panel.grid.minor = element_line(size = 1))
 
 ### Violin
 ggplot(
@@ -745,15 +628,10 @@ pos_SOA_scale = data.frame(
 # plot
 ggplot(data = pos_SOA_scale)+
   geom_violin(aes(x = parameter, y = value))+
-  # coord_flip()+
   labs(x = "", y = "SOA (ms)")+
-  # stat_summary(aes(x = dummy, y = value), fun.data = get_95_HDI, size = 0.5)+
-  # stat_summary(aes(x = dummy, y = value), fun.data = get_50_HDI, size = 1.5)+
   stat_summary(aes(x = parameter, y = value), fun.data = get_95_HDI, size = 0.7)+  # a bit thicker
   stat_summary(aes(x = parameter, y = value), fun.data = get_50_HDI, size = 2.5)+
   facet_wrap(~parameter, scales = "free")+
-  # scale_x_discrete(labels = "", breaks = c())+
-  # geom_hline(yintercept = 0, linetype = 2)+
   theme_gray(base_size = 30)+
   theme(
     panel.grid.major = element_line(size = 1.5)

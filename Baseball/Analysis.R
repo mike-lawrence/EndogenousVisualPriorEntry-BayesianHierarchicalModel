@@ -7,7 +7,7 @@ library(rstan)
 
 
 ##########################################
-####          Data Import           #### 
+####          Data Import             #### 
 ##########################################
 
 check_before_read = function(file){
@@ -158,7 +158,10 @@ a= a[a$id != "delta 8 2014-12-04 14:23:37",]
 length(unique(a$id))
 
 
-#### TOJ ####
+
+##########################################
+####             TOJ                  #### 
+##########################################
 toj_trials = a
 toj_trials = toj_trials[!is.na(toj_trials$toj_response), ]
 toj_trials$safe = FALSE
@@ -175,12 +178,8 @@ toj_trials[toj_trials$soa2 == "240",]$soa2 = 250
 # Negative SOAs means Ball first 
 toj_trials$soa2[toj_trials$first_arrival == "ball"] = -toj_trials$soa2[toj_trials$first_arrival == "ball"]
 
-
-
 ### save toj trials for posterior predictive check
-# aggregate with respect to id and condition 
 save(toj_trials, file = "../toj_trials.Rdata")
-
 
 ### Graph participant-wise psychometric functions 
 toj_means_by_id_by_condition = ddply(
@@ -215,42 +214,11 @@ ggplot(
   ) +
   geom_point()
 
-### compare tie goes to runner with not 
-toj_means_by_id_by_convention = ddply(
-  .data = toj_trials
-  , .variables = .(base_probe_dist, soa2, know_tie_goes_runner)
-  , .fun = function(x){
-    to_return = data.frame(
-      value = mean(x$safe)
-    )
-    return(to_return)
-  }
-)
-toj_means_by_id_by_condition$soa2 = as.numeric(as.character(toj_means_by_id_by_condition$soa2))
-
-ggplot(
-  data = toj_means_by_id_by_convention
-  , mapping = aes(
-    x = soa2
-    , y =  value
-    , shape = base_probe_dist
-    , linetype = base_probe_dist
-    , group = base_probe_dist
-  )
-)+
-  facet_wrap(
-    ~ know_tie_goes_runner
-  )+
-  geom_smooth(
-    method = "glm"
-    , method.args = list(family = binomial(link="probit"))
-    , se = FALSE
-  ) +
-  geom_point()
 
 
-
-#### Color ####
+##########################################
+####             Color                  #### 
+##########################################
 short_angle = function(x, y)
 {
 	return(((x - y + 180) %% 360) - 180)
@@ -281,73 +249,14 @@ color_trials$attended[ (color_trials$base_probe_dist == 0.8 & color_trials$probe
 
 color_trials$color_diff_radians = color_trials$color_diff*pi/180
 
-
-
 ### save color trials for posterior predicitve check 
 save(color_trials, file = "../color_trials.Rdata")
 
 
 
-# mixture model - rho and kappa by participant
-source("../../fit_uvm.R")
-fitted_all = ddply(
-  .data = color_trials
-  , .variables = .(id)
-  , .fun = function(piece_of_df){
-    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
-    to_return = data.frame(
-      kappa_prime = fit$kappa_prime
-      , rho = fit$rho
-    )
-    return(to_return)
-  }
-  , .progress = 'time'
-)
-
-# how many participants are perfect across the board?
-perfection_count = sum(fitted_all$rho == 1)
-perfection_count
-perfection_rate = perfection_count/nrow(fitted_all)
-perfection_rate
-
-ggplot(
-  data = fitted_all
-  , mapping = aes(rho)  #, fill = attended)
-)+ 
-  geom_histogram(bins = 50)+
-  labs(x = "Probability of Memory", y = "Frequency")+
-  theme_gray(base_size = 24)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1))
-
-# get rho and kappa by condition 
-fitted_by_condition = ddply(
-  .data = color_trials
-  , .variables = .(id, attended)
-  , .fun = function(piece_of_df){
-    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
-    to_return = data.frame(
-      kappa_prime = fit$kappa_prime
-      , rho = fit$rho
-    )
-    return(to_return)
-  }
-  , .progress = 'time'
-)
-
-# look at descriptive statistics (mean values) of raw data to compare with parameter estimates of model later
-rho_means_by_condition = aggregate(rho ~ attended, data = fitted_by_condition, FUN = mean)
-rho_means_by_condition
-plot(fitted_by_condition$rho)  # get a sense of outliers
-
-kappa_means_by_condition = aggregate(kappa_prime ~ attended, data = fitted_by_condition, FUN = mean)
-kappa_means_by_condition$kappa_prime = exp(kappa_means_by_condition$kappa_prime)
-names(kappa_means_by_condition)[2] = "kappa"
-kappa_means_by_condition
-
-
-
-#### Stan ####
+##########################################
+####             Stan                 #### 
+##########################################
 toj_color_data_for_stan = list(
   N_toj = length(unique(toj_trials$id))
   , L_toj = nrow(toj_trials)

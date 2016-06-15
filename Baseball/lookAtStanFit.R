@@ -13,6 +13,7 @@ load("toj_trials.Rdata")  # actual toj data
 load("color_trials.Rdata")  # actual color data
 
 
+
 ############################################################################################
 ####                                        Diagnostics                                 ####
 ############################################################################################
@@ -277,309 +278,6 @@ hist(color_trials[color_trials$attended == TRUE,]$color_diff_radians, breaks = 5
 #-------------------------------------- Do Color PPC --------------------------------------#
 
 
-#-------------------------------------- Get Betas -----------------------------------------#
-# extract samples
-detach('package:rstan', unload = T)  # to ensure 
-library(rstan)
-
-# version so nothing gets flipped twice by accident 
-ex_toj_color_post2 = extract(toj_color_post)
-
-# flip pss and jnd effects to make positive values indicate predicted results
-ex_toj_color_post = ex_toj_color_post2
-ex_toj_color_post$population_pss_effect_mean = -ex_toj_color_post2$population_pss_effect_mean
-ex_toj_color_post$population_logjnd_effect_mean = -ex_toj_color_post2$population_logjnd_effect_mean
-
-# (1) population_pss_intercept_mean      
-# (2) population_pss_effect_mean          
-# (3) population_logjnd_intercept_mean    
-# (4) population_logjnd_effect_mean     
-# (5) logitRhoMean                         
-# (6) logKappaMean                        
-# (7) logitRhoEffectMean                 
-# (8) logKappaEffectMean 
-betas2 = data.frame(value = ex_toj_color_post$beta)
-betas2$iteration = rownames(betas2)
-
-# melt
-ptm = proc.time()
-betas3 = melt( betas2 )  # this takes a while
-proc.time() - ptm
-
-betas3$parameter = rep( c(
-  "population_pss_intercept_mean"      
-  , "population_pss_effect_mean"          
-  , "population_logjnd_intercept_mean"    
-  , "population_logjnd_effect_mean"     
-  , "logitRhoMean"                       
-  , "logKappaMean"                       
-  , "logitRhoEffectMean"                 
-  , "logKappaEffectMean"
-)
-, times = 1
-, each = nrow(betas2)*length(unique(betas3$variable))/8  # 8 is number of parameters 
-)  
-betas3$participant = rep(c(1:44), times = 8, each = nrow(betas2))
-
-# flip betas 
-betas = betas3
-betas[betas$parameter=="population_pss_effect_mean",]$value = -betas3[betas3$parameter=="population_pss_effect_mean" ,]$value
-betas[betas$parameter=="population_logjnd_effect_mean",]$value = -betas3[betas3$parameter=="population_logjnd_effect_mean",]$value
-#-------------------------------------- Get Betas -----------------------------------------#
-
-
-#---------------------------- Simulated P-wise PSS Intercept ------------------------------#
-pssmean2 = data.frame(value = ex_toj_color_post$population_pss_intercept_mean)
-pssmean2$iteration = rownames(pssmean2)
-pssmean = melt( pssmean2 )$value
-pssmean_reps = sample(pssmean, 50, replace = T)
-
-psssd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_pss_intercept_sd))
-psssd2$iteration = rownames(psssd2)
-psssd = melt( psssd2 )$value
-psssd_reps = sample(psssd, 50, replace = T)
-
-pssconventioneffect2 = data.frame(value = ex_toj_color_post$population_pss_convention_effect_mean)
-pssconventioneffect2$iteration = rownames(pssconventioneffect2)
-pssconventioneffect = melt( pssconventioneffect2 )$value
-pssconventioneffect_reps = sample(pssconventioneffect, 50, replace = T)
-conventionfactor = ifelse(aggregate(know_tie_goes_runner~id,data = toj_trials, FUN =unique)$know_tie_goes_runner, -1, 1)
-
-# cycle through each participant 
-pss_per_id = ddply(
-  .data = betas
-  , .variables = .(participant)
-  , .fun = function(x){
-    i = unique(x$participant)
-    x_reps = sample(x[x$parameter == "population_pss_intercept_mean",]$value, 50, replace = TRUE)
-    pssintercept = pssmean_reps + pssconventioneffect_reps*conventionfactor[i]/2 + psssd_reps*x_reps
-    df = data.frame(pssintercept)*250
-    return(df)
-  }
-)
-
-# get line of best fit through median values 
-pss_med_per_id = aggregate(pssintercept ~ participant, data = pss_per_id, FUN = median)$pssintercept
-#---------------------------- Simulated P-wise PSS Intercept ------------------------------#
-
-
-#---------------------------- Simulated P-wise JND Intercept ------------------------------#
-logjndmean2 = data.frame(value = ex_toj_color_post$population_logjnd_intercept_mean)
-logjndmean2$iteration = rownames(logjndmean2)
-logjndmean = melt( logjndmean2 )$value
-logjndmean_reps = sample(logjndmean, 50, replace = T)
-
-logjndsd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_logjnd_intercept_sd))
-logjndsd2$iteration = rownames(logjndsd2)
-logjndsd = melt( logjndsd2 )$value
-logjndsd_reps = sample(logjndsd, 50, replace = T)
-
-logjndconventioneffect2 = data.frame(value = ex_toj_color_post$population_logjnd_convention_effect_mean)
-logjndconventioneffect2$iteration = rownames(logjndconventioneffect2)
-logjndconventioneffect = melt( logjndconventioneffect2 )$value
-logjndconventioneffect_reps = sample(logjndconventioneffect, 50, replace = T)
-
-conventionfactor = ifelse(aggregate(know_tie_goes_runner~id,data = toj_trials, FUN =unique)$know_tie_goes_runner, -1, 1)
-
-jnd_per_id = ddply(
-  .data = betas
-  , .variables = .(participant)
-  , .fun = function(x){
-    i = unique(x$participant)
-    x_reps = sample(x[x$parameter == "population_logjnd_intercept_mean",]$value, 50, replace = TRUE)
-    logjndintercept = logjndmean_reps + logjndconventioneffect_reps*conventionfactor[i]/2 + logjndsd_reps*x_reps
-    df = exp(data.frame(logjndintercept))*250
-    names(df) = "jndintercept"
-    return(df)
-  }
-)
-
-# get line of best fit through median values 
-jnd_med_per_id = aggregate(jndintercept ~ participant, data = jnd_per_id, FUN = median)$jndintercept
-#---------------------------- Simulated P-wise JND Intercept ------------------------------#
-
-
-#---------------------------- Real P-wise PSS & JND ---------------------------------------#
-toj_by_condition = ddply(
-  .data = toj_trials
-  , .variables = .(id)  
-  , .fun = function(x){
-    fit = glm(
-      formula = safe~soa2
-      , data = x
-      , family = binomial(link = "probit")
-    )
-    to_return = data.frame(
-      id = x$id[1]
-      , pss = -coef(fit)[1]/coef(fit)[2]
-      , jnd = (  (1-coef(fit)[1])/coef(fit)[2] -  (-1-coef(fit)[1])/coef(fit)[2] ) / 2  # unsure about this
-    )
-    return(to_return)
-  }
-)
-#---------------------------- Real P-wise PSS & JND ---------------------------------------#
-
-
-#---------------------------- Do PSS.JND Intercept Corr PPC -------------------------------#
-# plot posterior samples
-plot(pss_per_id$pssintercept, jnd_per_id$jndintercept, ylab = "jnd intercepts", xlab = "pss intercepts", col = alpha(pss_per_id$participant, 0.2) , ylim = c(0, 500) )
-abline(lm(jnd_med_per_id~pss_med_per_id), lty = 2)
-# get correlation
-cor(jnd_med_per_id, pss_med_per_id)
-
-# look at JND and PSS intercept scatter plot 
-# for attend glove
-pss_by_id = toj_by_condition$pss
-jnd_by_id = toj_by_condition$jnd
-points(
-  pss_by_id
-  , jnd_by_id
-  , col = toj_by_condition$id
-  , pch = 20
-)
-abline(lm(jnd_by_id~pss_by_id))
-# get correlation
-cor(jnd_by_id, pss_by_id)
-#---------------------------- Do PSS.JND Intercept Corr PPC -------------------------------#
-
-
-#---------------------------- Simulated P-wise PSS Effects --------------------------------#
-psseffect2 = data.frame(value = ex_toj_color_post$population_pss_effect_mean)
-psseffect2$iteration = rownames(psseffect2)
-psseffect = melt( psseffect2 )$value
-psseffect_reps = sample(psseffect, 50, replace = T)
-
-psseffectsd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_pss_effect_sd))
-psseffectsd2$iteration = rownames(psseffectsd2)
-psseffectsd = melt( psseffectsd2 )$value
-psseffectsd_reps = sample(psseffectsd, 50, replace = T)
-
-# cycle through each participant 
-psseffect_per_id = ddply(
-  .data = betas
-  , .variables = .(participant)
-  , .fun = function(x){
-    i = unique(x$participant)
-    x_reps = sample(x[x$parameter == "population_pss_intercept_mean",]$value, 50, replace = TRUE)
-    pssintercept = pssmean_reps + pssconventioneffect_reps*conventionfactor[i]/2 + psssd_reps*x_reps
-    x_effect_reps = sample(x[x$parameter == "population_pss_effect_mean",]$value, 50, replace = TRUE)
-    psseffect2 = (psseffect_reps/2 + psseffectsd_reps*x_effect_reps)
-    psseffect = (pssintercept + psseffect2) - (pssintercept - psseffect2)  
-    df = data.frame(psseffect)*250
-    return(df)
-  }
-)
-
-# get line of best fit through median values 
-psseffect_med_per_id = aggregate(psseffect ~ participant, data = psseffect_per_id, FUN = median)$psseffect
-#---------------------------- Simulated P-wise PSS Effect ---------------------------------#
-
-
-#---------------------------- Simulated P-wise Rho Effect ---------------------------------#
-logitrhomean2 = data.frame(value = ex_toj_color_post$logitRhoMean)
-logitrhomean2$iteration = rownames(logitrhomean2)
-logitrhomean = melt( logitrhomean2 )$value
-logitrhomean_reps = sample(logitrhomean, 50, replace = T)
-
-logitrhosd2 = data.frame(value = tan(ex_toj_color_post$zlogitRhoSD))
-logitrhosd2$iteration = rownames(logitrhosd2)
-logitrhosd = melt( logitrhosd2 )$value
-logitrhosd_reps = sample(logitrhosd, 50, replace = T)
-
-logitrhoeffect2 = data.frame(value = ex_toj_color_post$logitRhoEffectMean)
-logitrhoeffect2$iteration = rownames(logitrhoeffect2)
-logitrhoeffect = melt( logitrhoeffect2 )$value
-logitrhoeffect_reps = sample(logitrhoeffect, 50, replace = T)
-
-logitrhoeffectsd2 = data.frame(value = tan(ex_toj_color_post$zlogitRhoEffectSD))
-logitrhoeffectsd2$iteration = rownames(logitrhoeffectsd2)
-logitrhoeffectsd = melt( logitrhoeffectsd2 )$value
-logitrhoeffectsd_reps = sample(logitrhoeffectsd, 50, replace = T)
-
-rhoeffect_per_id = ddply(
-  .data = betas
-  , .variables = .(participant)
-  , .fun = function(x){
-    i = unique(x$participant)
-    x_reps = sample(x[x$parameter == "logitRhoMean",]$value, 50, replace = TRUE)
-    logitrhomean = logitrhomean_reps + logitrhosd_reps*x_reps
-    x_effect_reps = sample(x[x$parameter == "logitRhoEffectMean",]$value, 50, replace = TRUE)
-    logitrhoeffect = (logitrhoeffect_reps + logitrhoeffectsd_reps*x_effect_reps)/2 
-    rhoeffect = plogis(logitrhomean + logitrhoeffect) - plogis(logitrhomean - logitrhoeffect)
-    df = data.frame(rhoeffect)
-    names(df) = "rhoeffect"
-    return(df)
-  }
-)
-
-# get line of best fit through median values 
-rhoeffect_med_per_id = aggregate(rhoeffect ~ participant, data = rhoeffect_per_id, FUN = median)$rhoeffect
-#---------------------------- Simulated P-wise Rho Effect ---------------------------------#
-
-
-#---------------------------- Real P-wise PSS Effects -------------------------------------#
-toj_for_pss_effects = ddply(
-  .data = toj_trials
-  , .variables = .(id, base_probe_dist)  
-  , .fun = function(x){
-    fit = glm(
-      formula = safe~soa2
-      , data = x
-      , family = binomial(link = "probit")
-    )
-    to_return = data.frame(
-      id = x$id[1]
-      , pss = -coef(fit)[1]/coef(fit)[2]
-      , jnd = (  (1-coef(fit)[1])/coef(fit)[2] -  (-1-coef(fit)[1])/coef(fit)[2] ) / 2  # unsure about this
-    )
-    return(to_return)
-  }
-)
-
-real_pss_effects = -aggregate(pss ~ id, toj_for_pss_effects, diff)$pss  # glove minus base like below
-#---------------------------- Real P-wise PSS Effects -------------------------------------#
-
-
-#---------------------------- Real P-wise Rho Effects -------------------------------------#
-source("../fit_uvm.R")
-fitted_by_condition = ddply(
-  .data = color_trials
-  , .variables = .(id, attended)
-  , .fun = function(piece_of_df){
-    fit = fit_uvm(piece_of_df$color_diff_radians, do_mu = TRUE)
-    to_return = data.frame(
-      kappa_prime = fit$kappa_prime
-      , rho = fit$rho
-    )
-    return(to_return)
-  }
-  , .progress = 'time'
-)
-
-real_rho_effects = aggregate(rho ~ id, fitted_by_condition, diff)$rho
-#---------------------------- Real P-wise Rho Effects -------------------------------------#
-
-
-#---------------------------- Do PSS.Rho Effect Corr PPC ----------------------------------#
-# plot posterior samples
-plot(rhoeffect_per_id$rhoeffect, psseffect_per_id$psseffect, xlab = "rho effects", ylab = "pss effects", col = alpha(psseffect_per_id$participant, 0.2)) #, ylim = c(-0.4, 0.4), xlim = c(-100, 100) )
-abline(lm(psseffect_med_per_id~ rhoeffect_med_per_id), lty = 2)
-# get correlation
-cor(rhoeffect_med_per_id, psseffect_med_per_id)
-
-# look at Rho and PSS effect scatter plot 
-points(
-  real_rho_effects
-  , real_pss_effects
-  , col = toj_by_condition$id
-  , pch = 20
-)
-abline(lm( real_pss_effects ~ real_rho_effects))
-# get correlation
-cor(real_rho_effects, real_pss_effects)
-#---------------------------- Do PSS.Rho Effect Corr PPC ----------------------------------#
-
-
 
 ############################################################################################
 ####                                       Analysis                                     ####
@@ -630,7 +328,77 @@ get_50_HDI = function(y) {
 ggs_caterpillar(gg_toj_color_post, family = "cor", thick_ci = c(0.25, 0.75) ) + geom_vline(xintercept = 0, col = "red")
 
 
+#-------------------------------------- Get Betas -----------------------------------------#
+# extract samples
+detach('package:rstan', unload = T)  # to ensure 
+library(rstan)
+
+# version so nothing gets flipped twice by accident 
+ex_toj_color_post2 = extract(toj_color_post)
+
+# flip pss and jnd effects to make positive values indicate predicted results
+ex_toj_color_post = ex_toj_color_post2
+ex_toj_color_post$population_pss_effect_mean = -ex_toj_color_post2$population_pss_effect_mean
+ex_toj_color_post$population_logjnd_effect_mean = -ex_toj_color_post2$population_logjnd_effect_mean
+
+# get correlation posteriors 
+pos_corr2 = data.frame(value = ex_toj_color_post$cor)
+pos_corr2$id = rownames(pos_corr2)
+pos_corr = melt( pos_corr2 )
+names(pos_corr)[2] = c("parameter")
+
+# (1) population_pss_intercept_mean      
+# (2) population_pss_effect_mean          
+# (3) population_logjnd_intercept_mean    
+# (4) population_logjnd_effect_mean     
+# (5) logitRhoMean                         
+# (6) logKappaMean                        
+# (7) logitRhoEffectMean                 
+# (8) logKappaEffectMean 
+betas2 = data.frame(value = ex_toj_color_post$beta)
+betas2$iteration = rownames(betas2)
+
+# melt
+ptm = proc.time()
+betas3 = melt( betas2 )  # this takes a while
+proc.time() - ptm
+
+betas3$parameter = rep( c(
+  "population_pss_intercept_mean"      
+  , "population_pss_effect_mean"          
+  , "population_logjnd_intercept_mean"    
+  , "population_logjnd_effect_mean"     
+  , "logitRhoMean"                       
+  , "logKappaMean"                       
+  , "logitRhoEffectMean"                 
+  , "logKappaEffectMean"
+)
+, times = 1
+, each = nrow(betas2)*length(unique(betas3$variable))/8  # 8 is number of parameters 
+)  
+betas3$participant = rep(c(1:44), times = 8, each = nrow(betas2))
+
+# flip betas 
+betas = betas3
+betas[betas$parameter=="population_pss_effect_mean",]$value = -betas3[betas3$parameter=="population_pss_effect_mean" ,]$value
+betas[betas$parameter=="population_logjnd_effect_mean",]$value = -betas3[betas3$parameter=="population_logjnd_effect_mean",]$value
+#-------------------------------------- Get Betas -----------------------------------------#
+
+
 #---------------------------- JND vs. PSS Intercepts --------------------------------------#
+pssmean2 = data.frame(value = ex_toj_color_post$population_pss_intercept_mean)
+pssmean2$iteration = rownames(pssmean2)
+pssmean = melt( pssmean2 )$value
+
+psssd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_pss_intercept_sd))
+psssd2$iteration = rownames(psssd2)
+psssd = melt( psssd2 )$value
+
+pssconventioneffect2 = data.frame(value = ex_toj_color_post$population_pss_convention_effect_mean)
+pssconventioneffect2$iteration = rownames(pssconventioneffect2)
+pssconventioneffect = melt( pssconventioneffect2 )$value
+conventionfactor = ifelse(aggregate(know_tie_goes_runner~id,data = toj_trials, FUN =unique)$know_tie_goes_runner, -1, 1)
+
 pss_ids = ddply(
   .data = betas
   , .variables = .(participant)
@@ -643,6 +411,18 @@ pss_ids = ddply(
     return(df)
   }
 )
+
+logjndmean2 = data.frame(value = ex_toj_color_post$population_logjnd_intercept_mean)
+logjndmean2$iteration = rownames(logjndmean2)
+logjndmean = melt( logjndmean2 )$value
+
+logjndsd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_logjnd_intercept_sd))
+logjndsd2$iteration = rownames(logjndsd2)
+logjndsd = melt( logjndsd2 )$value
+
+logjndconventioneffect2 = data.frame(value = ex_toj_color_post$population_logjnd_convention_effect_mean)
+logjndconventioneffect2$iteration = rownames(logjndconventioneffect2)
+logjndconventioneffect = melt( logjndconventioneffect2 )$value
 
 jnd_ids = ddply(
   .data = betas
@@ -659,19 +439,12 @@ jnd_ids = ddply(
 
 pss_v_jnd = merge(jnd_ids, pss_ids)
 
-# # get rid of outliers
-# pss_v_jnd = pss_v_jnd[pss_v_jnd$jndintercept != max(pss_v_jnd$jndintercept)
-#                       & pss_v_jnd$pssintercept != max(pss_v_jnd$pssintercept)
-#                       & pss_v_jnd$jndintercept != min(pss_v_jnd$jndintercept)
-#                       & pss_v_jnd$pssintercept != min(pss_v_jnd$pssintercept)
-#                       ,]
-
 ggplot(data = pss_v_jnd, aes(x =pssintercept, y = jndintercept))+
   scale_x_continuous(name = "PSS Intercept Mean (Normalized)")+
   scale_y_continuous(name = "Log JND Intercept Mean (Normalized)")+
   geom_point(size = 2)+
   # geom_smooth(method = "lm", se = FALSE, size = 1)+
-  geom_smooth()+
+  geom_smooth(span = 2)+
   theme_gray(base_size = 24)+
   theme(panel.grid.major = element_line(size = 1.5)
         ,panel.grid.minor = element_line(size = 1))
@@ -694,61 +467,35 @@ ggplot(
 #---------------------------- JND vs. PSS Intercepts --------------------------------------#
 
 
-#-------------------------- Look at Rho Effect Shrinkage ----------------------------------#
-# get median values from full posteriors and contrast with real values
-rhoeffect_full_per_id = ddply(
-  .data = betas
-  , .variables = .(participant)
-  , .fun = function(x){
-    i = unique(x$participant)
-    x_val= x[x$parameter == "logitRhoMean",]$value
-    logitrhomean = median(logitrhomean) + median(logitrhosd)*median(x_val)
-    x_effect = x[x$parameter == "logitRhoEffectMean",]$value
-    logitrhoeffect = (median(logitrhoeffect)+ median(logitrhoeffectsd)*median(x_effect) ) / 2 
-    rhoeffect = plogis(logitrhomean + logitrhoeffect) - plogis(logitrhomean - logitrhoeffect)
-    df = data.frame(rhoeffect)
-    names(df) = "rhoeffect"
-    return(df)
-  }
-)
-
-ids = unique(rhoeffect_full_per_id$participant)
-plot(ids, real_rho_effects, pch = 1, col = ids)
-points(rhoeffect_full_per_id$rhoeffect, pch = 16, col = ids)
-abline(h = 0, lty = 1, lwd = 4)
-abline(h=mean(real_rho_effects), lty = 2)
-abline(h=mean(rhoeffect_full_per_id$rhoeffect))
-#-------------------------- Look at Rho Effect Shrinkage ----------------------------------#
-
-
-#---------------------------- Real Rho vs. PSS Effects ------------------------------------#
-# get sense of bias of r parameter applied to median Bayesian values (see next) 
-real_rho_pss_effects2 = data.frame(real_rho_effects, real_pss_effects)
-plot(real_rho_pss_effects2$real_rho_effects, real_rho_pss_effects2$real_pss_effects)
-cor(real_rho_pss_effects2$real_rho_effects, real_rho_pss_effects2$real_pss_effects)
-outlier_real_points = real_rho_pss_effects2[real_rho_pss_effects2$real_pss_effects > 75
-                                        | real_rho_pss_effects2$real_pss_effects < -150
-                                        ,]  # these outliers may be different than those removed from Bayesian points below
-real_rho_pss_effects = real_rho_pss_effects2[!(real_rho_pss_effects2$real_pss_effects %in% outlier_real_points$real_pss_effects),]
-plot(real_rho_pss_effects$real_rho_effects, real_rho_pss_effects$real_pss_effects)
-abline(lm(real_rho_pss_effects$real_pss_effects~real_rho_pss_effects$real_rho_effects))
-cor(real_rho_pss_effects$real_rho_effects, real_rho_pss_effects$real_pss_effects)
-#---------------------------- Real Rho vs. PSS Effects ------------------------------------#
-
-
 #---------------------------- Rho vs. PSS Effects -----------------------------------------#
+psseffect2 = data.frame(value = ex_toj_color_post$population_pss_effect_mean)
+psseffect2$iteration = rownames(psseffect2)
+psseffect = melt( psseffect2 )$value
+
+psseffectsd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_pss_effect_sd))
+psseffectsd2$iteration = rownames(psseffectsd2)
+psseffectsd = melt( psseffectsd2 )$value
+
 psseffect_ids = ddply(
   .data = betas
   , .variables = .(participant)
   , .fun = function(x){
     i = unique(x$participant)
     x_use = x[x$parameter ==  "population_pss_effect_mean",]$value
-    psseffect = median(psseffect/2)  + median(psseffectsd)*median(x_use)   
+    psseffect = median(psseffect/2)  + median(psseffectsd)*median(x_use) 
     df = data.frame(psseffect)
     names(df) = "psseffect"
     return(df)
   }
 )
+
+logitrhoeffect2 = data.frame(value = ex_toj_color_post$logitRhoEffectMean)
+logitrhoeffect2$iteration = rownames(logitrhoeffect2)
+logitrhoeffect = melt( logitrhoeffect2 )$value
+
+logitrhoeffectsd2 = data.frame(value = tan(ex_toj_color_post$zlogitRhoEffectSD))
+logitrhoeffectsd2$iteration = rownames(logitrhoeffectsd2)
+logitrhoeffectsd = melt( logitrhoeffectsd2 )$value
 
 rhoeffect_ids = ddply(
   .data = betas
@@ -756,7 +503,7 @@ rhoeffect_ids = ddply(
   , .fun = function(x){
     i = unique(x$participant)
     x_use = x[x$parameter == "logitRhoEffectMean",]$value
-    logitrhoeffect_use = median(logitrhoeffect) + median(logitrhoeffectsd)*median(x_use) 
+    logitrhoeffect_use = median(logitrhoeffect) + median(logitrhoeffectsd)*median(x_use)
     df = data.frame(logitrhoeffect_use)
     names(df) = "logitrhoeffect"
     return(df)
@@ -766,41 +513,35 @@ rhoeffect_ids = ddply(
 psseffect_v_rhoeffect2 = merge(rhoeffect_ids, psseffect_ids)
 
 # get rid of outliers
-outlier_points = psseffect_v_rhoeffect2[psseffect_v_rhoeffect2$logitrhoeffect > 0.875
-                                        | psseffect_v_rhoeffect2$logitrhoeffect < 0.125
-                                        ,]
+outlier_points = psseffect_v_rhoeffect2[psseffect_v_rhoeffect2$psseffect < -0.2,]
 
 psseffect_v_rhoeffect = psseffect_v_rhoeffect2[!(psseffect_v_rhoeffect2$logitrhoeffect %in% outlier_points$logitrhoeffect),]
 
-# get correlation without outliers
-cor_temp = cor(psseffect_v_rhoeffect$psseffect, psseffect_v_rhoeffect$logitrhoeffect)
-cor_plot = as.character(round(cor_temp, 3))
-
-ggplot(data = psseffect_v_rhoeffect, aes(y =psseffect, x = logitrhoeffect))+
+ggplot(data = psseffect_v_rhoeffect, aes(x = logitrhoeffect, y =psseffect))+
   scale_y_continuous(name = "Half PSS Effect Mean (Normalized)")+
-  scale_x_continuous(name = "Logit \u03C1 Effect Mean (Normalized)")+
+  scale_x_continuous(name = "Logit \u03C1 Effect Mean")+
+  geom_hline(yintercept = 0, linetype = 2, size = 1)+
+  geom_vline(xintercept = 0, linetype = 2, size = 1)+
   geom_point(size = 3)+
   geom_smooth(method = "lm", se = FALSE, size = 1)+
   geom_smooth(
     data = psseffect_v_rhoeffect2
     , aes(y = psseffect, x = logitrhoeffect)
     , method = "lm", se = FALSE, size = 1, linetype = "dotted")+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
   geom_point(data = outlier_points, aes(y = psseffect, x = logitrhoeffect), size = 3)+
   geom_point(data = outlier_points, aes(y = psseffect, x = logitrhoeffect), size = 1.5, colour = "grey90")+
-  # annotate("text", label = paste("r=",cor_plot), x = 0.625, y = -0.15, size = 8)+
   theme_gray(base_size = 30)+
   theme(panel.grid.major = element_line(size = 1.5)
         ,panel.grid.minor = element_line(size = 1)
         , legend.position = "none")
-  
+ 
 ### Violin
 # must take negative because I flipped pss effect sign
 pos_corr_f = pos_corr
 pos_corr_f[pos_corr_f$parameter == "value.2.7",]$value = -pos_corr[pos_corr$parameter == "value.2.7",]$value    
 # plot
 ggplot(
-  data = pos_corr_f[pos_corr_f$parameter == "value.2.7",]  # must take negative because I flipped pss effect sign
+  data = pos_corr_f[pos_corr_f$parameter == "value.2.7",]  
   , aes(x = parameter, y = value)
 )+
   geom_violin()+
@@ -808,79 +549,158 @@ ggplot(
   stat_summary(fun.data = get_95_HDI, size = 0.7)+
   stat_summary(fun.data = get_50_HDI, size = 2.5)+  
   geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  theme_gray(base_size = 24)+
+  theme_gray(base_size = 30)+
   theme(panel.grid.major = element_line(size = 1.5)
         ,panel.grid.minor = element_line(size = 1)
         , axis.text.x = element_blank()
         , axis.ticks.x = element_blank()) 
+
+# get 95% HDI
+print("NOTE: make sure to flip sign (see above code)")
+get_95_HDI(pos_corr_f[pos_corr_f$parameter == "value.2.7",]$value)
 #---------------------------- Rho vs. PSS Effects -----------------------------------------#
 
 
-#---------------------------- JND Effect vs. PSS Intercept --------------------------------#
-logjndeffect2 = data.frame(value = ex_toj_color_post$population_logjnd_effect_mean) # must devide by two for SD to make sense 
-logjndeffect2$iteration = rownames(logjndeffect2)
-logjndeffect = melt( logjndeffect2 )$value
+#---------------------------- Kappa vs. PSS Effects ---------------------------------------#
+logkappaeffect2 = data.frame(value = ex_toj_color_post$logKappaEffectMean)
+logkappaeffect2$iteration = rownames(logkappaeffect2)
+logkappaeffect = melt( logkappaeffect2 )$value
 
-logjndeffectsd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_logjnd_effect_sd))
-logjndeffectsd2$iteration = rownames(logjndeffectsd2)
-logjndeffectsd = melt( logjndeffectsd2 )$value
+logkappaeffectsd2 = data.frame(value = tan(ex_toj_color_post$zlogKappaEffectSD))
+logkappaeffectsd2$iteration = rownames(logkappaeffectsd2)
+logkappaeffectsd = melt( logkappaeffectsd2 )$value
 
-jndeffect_ids = ddply(
+kappaeffect_ids = ddply(
   .data = betas
   , .variables = .(participant)
   , .fun = function(x){
     i = unique(x$participant)
-    x_use = x[x$parameter == "population_logjnd_effect_mean",]$value
-    logjndeffect = median(logjndeffect)/2 + median(logjndeffectsd)*median(x_use)
-    df = data.frame(logjndeffect)
-    names(df) = "jndeffect"
+    x_use = x[x$parameter == "logKappaEffectMean",]$value
+    logkappaeffect_use = median(logkappaeffect) + median(logkappaeffectsd)*median(x_use)
+    df = data.frame(logkappaeffect_use)
+    names(df) = "logkappaeffect"
     return(df)
   }
 )
 
-pss_v_jndeffect2 = merge(jndeffect_ids, pss_ids)
+psseffect_v_kappaeffect2 = merge(kappaeffect_ids, psseffect_ids)
 
-outlier_jndeffect_points = pss_v_jndeffect2[pss_v_jndeffect2$pssintercept > 0.25
-                                        | pss_v_jndeffect2$pssintercept < -0.50
-                                        ,]
+# get rid of outliers
+outlier_points = psseffect_v_kappaeffect2[psseffect_v_kappaeffect2$psseffect < -0.2,]
 
-pss_v_jndeffect = pss_v_jndeffect2[!(pss_v_jndeffect2$pssintercept %in% outlier_jndeffect_points$pssintercept),]
+psseffect_v_kappaeffect = psseffect_v_kappaeffect2[!(psseffect_v_kappaeffect2$logkappaeffect %in% outlier_points$logkappaeffect),]
 
-ggplot(data = pss_v_jndeffect, aes(x =pssintercept, y = jndeffect))+
-  scale_x_continuous(name = "PSS Intercept Mean (Normalized)")+
-  scale_y_continuous(name = "Half Log JND Effect Mean (Normalized)")+
+ggplot(data = psseffect_v_kappaeffect, aes(x = logkappaeffect, y =psseffect))+
+  scale_y_continuous(name = "Half PSS Effect Mean (Normalized)")+
+  scale_x_continuous(name = "Log \u03BA Effect Mean")+
+  geom_hline(yintercept = 0, linetype = 2, size = 1)+
+  geom_vline(xintercept = 0, linetype = 2, size = 1)+
   geom_point(size = 3)+
   geom_smooth(method = "lm", se = FALSE, size = 1)+
   geom_smooth(
-    data = pss_v_jndeffect2
-    , aes(x = pssintercept, y = jndeffect)
+    data = psseffect_v_kappaeffect2
+    , aes(y = psseffect, x = logkappaeffect)
     , method = "lm", se = FALSE, size = 1, linetype = "dotted")+
-  geom_point(data = outlier_jndeffect_points, aes(x = pssintercept, y = jndeffect), size = 3)+
-  geom_point(data = outlier_jndeffect_points, aes(x = pssintercept, y = jndeffect), size = 1.5, colour = "grey90")+
+  geom_point(data = outlier_points, aes(y = psseffect, x = logkappaeffect), size = 3)+
+  geom_point(data = outlier_points, aes(y = psseffect, x = logkappaeffect), size = 1.5, colour = "grey90")+
   theme_gray(base_size = 30)+
   theme(panel.grid.major = element_line(size = 1.5)
         ,panel.grid.minor = element_line(size = 1)
         , legend.position = "none")
 
 ### Violin
-# flip sign because I flipped jnd effect sign
-pos_corr_f[pos_corr_f$parameter == "value.1.4",]$value = -pos_corr[pos_corr$parameter == "value.1.4",]$value
+# must take negative because I flipped pss effect sign
+pos_corr_f = pos_corr
+pos_corr_f[pos_corr_f$parameter == "value.2.8",]$value = -pos_corr[pos_corr$parameter == "value.2.8",]$value    
 # plot
 ggplot(
-  data = pos_corr_f[pos_corr_f$parameter == "value.1.4",]
+  data = pos_corr_f[pos_corr_f$parameter == "value.2.8",]  
   , aes(x = parameter, y = value)
 )+
   geom_violin()+
-  labs(x = "Log JND Effect Means vs. PSS Intercept Means", y = "Correlation Coefficient (r)")+
+  labs(x = "Log \u03BA vs. PSS Effect Means", y = "Correlation Coefficient (r)")+
   stat_summary(fun.data = get_95_HDI, size = 0.7)+
   stat_summary(fun.data = get_50_HDI, size = 2.5)+  
   geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  theme_gray(base_size = 24)+
+  theme_gray(base_size = 30)+
   theme(panel.grid.major = element_line(size = 1.5)
         ,panel.grid.minor = element_line(size = 1)
         , axis.text.x = element_blank()
-        , axis.ticks.x = element_blank())
-#---------------------------- JND Effect vs. PSS Intercept --------------------------------#
+        , axis.ticks.x = element_blank()) 
+
+# get 95% HDI
+print("NOTE: make sure to flip sign (see above code)")
+get_95_HDI(pos_corr_f[pos_corr_f$parameter == "value.2.8",]$value)
+#---------------------------- Kappa vs. PSS Effects ---------------------------------------#
+
+
+
+
+# #---------------------------- JND Effect vs. PSS Intercept --------------------------------#
+# logjndeffect2 = data.frame(value = ex_toj_color_post$population_logjnd_effect_mean) # must devide by two for SD to make sense 
+# logjndeffect2$iteration = rownames(logjndeffect2)
+# logjndeffect = melt( logjndeffect2 )$value
+# 
+# logjndeffectsd2 = data.frame(value = tan(ex_toj_color_post$zpopulation_logjnd_effect_sd))
+# logjndeffectsd2$iteration = rownames(logjndeffectsd2)
+# logjndeffectsd = melt( logjndeffectsd2 )$value
+# 
+# jndeffect_ids = ddply(
+#   .data = betas
+#   , .variables = .(participant)
+#   , .fun = function(x){
+#     i = unique(x$participant)
+#     x_use = x[x$parameter == "population_logjnd_effect_mean",]$value
+#     logjndeffect = median(logjndeffect)/2 + median(logjndeffectsd)*median(x_use)
+#     df = data.frame(logjndeffect)
+#     names(df) = "jndeffect"
+#     return(df)
+#   }
+# )
+# 
+# pss_v_jndeffect2 = merge(jndeffect_ids, pss_ids)
+# 
+# outlier_jndeffect_points = pss_v_jndeffect2[pss_v_jndeffect2$pssintercept > 0.25
+#                                         | pss_v_jndeffect2$pssintercept < -0.50
+#                                         ,]
+# 
+# pss_v_jndeffect = pss_v_jndeffect2[!(pss_v_jndeffect2$pssintercept %in% outlier_jndeffect_points$pssintercept),]
+# 
+# ggplot(data = pss_v_jndeffect, aes(x =pssintercept, y = jndeffect))+
+#   scale_x_continuous(name = "PSS Intercept Mean (Normalized)")+
+#   scale_y_continuous(name = "Half Log JND Effect Mean (Normalized)")+
+#   geom_point(size = 3)+
+#   geom_smooth(method = "lm", se = FALSE, size = 1)+
+#   geom_smooth(
+#     data = pss_v_jndeffect2
+#     , aes(x = pssintercept, y = jndeffect)
+#     , method = "lm", se = FALSE, size = 1, linetype = "dotted")+
+#   geom_point(data = outlier_jndeffect_points, aes(x = pssintercept, y = jndeffect), size = 3)+
+#   geom_point(data = outlier_jndeffect_points, aes(x = pssintercept, y = jndeffect), size = 1.5, colour = "grey90")+
+#   theme_gray(base_size = 30)+
+#   theme(panel.grid.major = element_line(size = 1.5)
+#         ,panel.grid.minor = element_line(size = 1)
+#         , legend.position = "none")
+# 
+# ### Violin
+# # flip sign because I flipped jnd effect sign
+# pos_corr_f[pos_corr_f$parameter == "value.1.4",]$value = -pos_corr[pos_corr$parameter == "value.1.4",]$value
+# # plot
+# ggplot(
+#   data = pos_corr_f[pos_corr_f$parameter == "value.1.4",]
+#   , aes(x = parameter, y = value)
+# )+
+#   geom_violin()+
+#   labs(x = "Log JND Effect Means vs. PSS Intercept Means", y = "Correlation Coefficient (r)")+
+#   stat_summary(fun.data = get_95_HDI, size = 0.7)+
+#   stat_summary(fun.data = get_50_HDI, size = 2.5)+  
+#   geom_hline(yintercept = 0, linetype = 2, size = 1)+
+#   theme_gray(base_size = 24)+
+#   theme(panel.grid.major = element_line(size = 1.5)
+#         ,panel.grid.minor = element_line(size = 1)
+#         , axis.text.x = element_blank()
+#         , axis.ticks.x = element_blank())
+# #---------------------------- JND Effect vs. PSS Intercept --------------------------------#
 
 
 
