@@ -277,8 +277,6 @@ toj_color_model = stan_model(
 toj_color_post = sampling(
   object = toj_color_model
   , data = toj_color_data_for_stan
-<<<<<<< HEAD
-<<<<<<< HEAD
   , iter = 2e4
   , chains = 8
   , cores = 8
@@ -287,23 +285,8 @@ toj_color_post = sampling(
              #, 'population_logjnd_effect_mean'
              #, 'zpopulation_logjnd_effect_sd'
              #, 'zpopulation_pss_effect_sd' 
-=======
-  , iter = 1e2
-  , chains = 1
-  , cores = 1
-  , pars = c('trial_prob', 'p'
-#              ,'population_pss_effect_mean'
-#              , 'population_logjnd_effect_mean'
-#              , 'zpopulation_logjnd_effect_sd'
-#              , 'zpopulation_pss_effect_sd' 
->>>>>>> origin/master
              )  # blind to the TOJ effects as I collect data
-=======
-  , iter = 1e2*5
-  , chains = 1
-  , cores = 1
-  , pars = c('trial_prob', 'p')  
->>>>>>> origin/master
   , include = FALSE
 )
 print(toj_color_post)
+save(toj_color_post, file = "FollowUptoj_color_post_June15th2016")

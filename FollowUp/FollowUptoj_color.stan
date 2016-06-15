@@ -52,7 +52,7 @@ parameters{
   // between subject, probe duration effect
   real logitRhoProbeEffectMean;
   real logKappaProbeEffectMean;
-  real logitRhoJudgmentTypeEffectMean;
+  real logitRhoJudgementTypeEffectMean;
   real logKappaJudgementTypeEffectMean;
   // between vs. within subject interaction terms
   real logitRhoProbeInteractionEffectMean;
@@ -139,10 +139,10 @@ transformed parameters{
     for(n in 1:N_color){
       logitRho[n] <- logitRhoMean + beta[n,5]*logitRhoSD 
       + condition_probe[n]*logitRhoProbeEffectMean/2
-      + condition_judgement_type[n]*logitRhoJudgmentTypeEffectMean/2; 
+      + condition_judgement_type[n]*logitRhoJudgementTypeEffectMean/2; 
       logKappa[n] <- logKappaMean + beta[n,6]*logKappaSD 
       + condition_probe[n]*logKappaProbeEffectMean/2
-      + condition_judgement_type[n]*logKappaJudgmentTypeEffectMean/2; 
+      + condition_judgement_type[n]*logKappaJudgementTypeEffectMean/2; 
       logitRhoEffect[n] <- logitRhoEffectMean + beta[n,7]*logitRhoEffectSD 
       + condition_probe[n]*logitRhoProbeInteractionEffectMean
       + condition_judgement_type[n]*logitRhoJudgementTypeInteractionEffectMean;
@@ -193,8 +193,8 @@ model{
   logKappaProbeEffectMean ~ normal(0,3) ;
   logitRhoProbeInteractionEffectMean ~ normal(0,3);
   logKappaProbeInteractionEffectMean ~ normal(0,3);
-  logitRhoJudgmentTypeEffectMean ~ normal(0,3);
-  logKappaJudgmentTypeEffectMean ~ normal(0,3);
+  logitRhoJudgementTypeEffectMean ~ normal(0,3);
+  logKappaJudgementTypeEffectMean ~ normal(0,3);
   logitRhoJudgementTypeInteractionEffectMean ~ normal(0,3);
   logKappaJudgementTypeInteractionEffectMean ~ normal(0,3);
   // logitRhoSD ~ weibull(2,2);#student_t(4,0,2);
