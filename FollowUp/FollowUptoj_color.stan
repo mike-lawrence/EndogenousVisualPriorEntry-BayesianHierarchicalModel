@@ -115,9 +115,9 @@ transformed parameters{
 			+ population_pss_probe_effect_mean*condition_probe[this_id]/2;
 			pss_effect_per_id[this_id] <- ( beta[this_id,2]*population_pss_effect_sd 
 			+ population_pss_effect_mean
-		  + population_pss_probe_interaction_effect_mean*condition_probe[this_id]
-		  + population_pss_judgement_type_interaction_effect_mean*condition_judgement_type[this_id]
-		  + population_pss_initial_bias_interaction_effect_mean*condition_initial_bias[this_id] )/2;
+		    + population_pss_probe_interaction_effect_mean*condition_probe[this_id]
+		    + population_pss_judgement_type_interaction_effect_mean*condition_judgement_type[this_id]
+		    + population_pss_initial_bias_interaction_effect_mean*condition_initial_bias[this_id] )/2;
 			logjnd_intercept_per_id[this_id] <- beta[this_id,3]*population_logjnd_intercept_sd + population_logjnd_intercept_mean
 			+ population_logjnd_judgement_type_effect_mean*condition_judgement_type[this_id]/2 
 			+ population_logjnd_initial_bias_effect_mean*condition_initial_bias[this_id]/2
