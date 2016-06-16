@@ -31,6 +31,7 @@ parameters{
 	real population_pss_probe_effect_mean;
 	real population_pss_probe_interaction_effect_mean;
 	real population_pss_judgement_type_interaction_effect_mean;
+	real population_pss_initial_bias_interaction_effect_mean;
 	real population_logjnd_intercept_mean ;
 	real population_logjnd_effect_mean ;
 	real population_logjnd_initial_bias_effect_mean;
@@ -38,6 +39,7 @@ parameters{
 	real population_logjnd_probe_effect_mean;
 	real population_logjnd_probe_interaction_effect_mean;
 	real population_logjnd_judgement_type_interaction_effect_mean;
+	real population_pss_initial_bias_interaction_effect_mean;
 	//population sds
 	real<lower=0,upper=pi()/2> zpopulation_pss_intercept_sd ;
 	real<lower=0,upper=pi()/2> zpopulation_pss_effect_sd ; 
@@ -111,18 +113,20 @@ transformed parameters{
 			+ population_pss_judgement_type_effect_mean*condition_judgement_type[this_id]/2 
 			+ population_pss_initial_bias_effect_mean*condition_initial_bias[this_id]/2 
 			+ population_pss_probe_effect_mean*condition_probe[this_id]/2;
-			pss_effect_per_id[this_id] <- (beta[this_id,2]*population_pss_effect_sd 
+			pss_effect_per_id[this_id] <- ( beta[this_id,2]*population_pss_effect_sd 
 			+ population_pss_effect_mean
 		  + population_pss_probe_interaction_effect_mean*condition_probe[this_id]
-		  + population_pss_judgement_type_interaction_effect_mean*condition_judgement_type[this_id])/2 ;
+		  + population_pss_judgement_type_interaction_effect_mean*condition_judgement_type[this_id]
+		  + population_pss_initial_bias_interaction_effect_mean*condition_initial_bias[this_id] )/2;
 			logjnd_intercept_per_id[this_id] <- beta[this_id,3]*population_logjnd_intercept_sd + population_logjnd_intercept_mean
 			+ population_logjnd_judgement_type_effect_mean*condition_judgement_type[this_id]/2 
 			+ population_logjnd_initial_bias_effect_mean*condition_initial_bias[this_id]/2
 			+ population_logjnd_probe_effect_mean*condition_probe[this_id]/2;
-			logjnd_effect_per_id[this_id] <- (beta[this_id,4]*population_logjnd_effect_sd 
+			logjnd_effect_per_id[this_id] <- ( beta[this_id,4]*population_logjnd_effect_sd 
 			+ population_logjnd_effect_mean
 			+ population_logjnd_probe_interaction_effect_mean*condition_probe[this_id]
-			+ population_logjnd_judgement_type_interaction_effect_mean*condition_judgement_type[this_id])/2 ;
+			+ population_logjnd_judgement_type_interaction_effect_mean*condition_judgement_type[this_id]
+			+ population_logjnd_initial_bias_interaction_effect_mean*condition_initial_bias[this_id] )/2;
 		}
 		for(this_obs in 1:L_toj){
 			trial_pss[this_obs] <- pss_intercept_per_id[id_toj[this_obs]] + pss_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs];  // glove, RIGHT is -1... base, LEFT is +1 
@@ -175,6 +179,7 @@ model{
 	population_pss_probe_effect_mean ~ normal(0,1);
 	population_pss_probe_interaction_effect_mean ~ normal(0,1);
 	population_pss_judgement_type_interaction_effect_mean ~ normal(0,1);
+	population_pss_initial_bias_interaction_effect_mean ~ normal(0,1) ; 
 	population_logjnd_intercept_mean ~ normal(-1,.5) ;
 	population_logjnd_effect_mean ~ normal(0,1) ;
 	population_logjnd_initial_bias_effect_mean ~ normal(0,1);
@@ -182,6 +187,7 @@ model{
 	population_logjnd_probe_effect_mean ~ normal(0,1);
 	population_logjnd_probe_interaction_effect_mean ~ normal(0,1);
 	population_logjnd_judgement_type_interaction_effect_mean ~ normal(0,1);
+	population_logjnd_initial_bias_interaction_effect_mean ~ normal(0,1);
 
 
   //set priors on population parameters
