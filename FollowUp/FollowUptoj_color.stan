@@ -39,7 +39,7 @@ parameters{
 	real population_logjnd_probe_effect_mean;
 	real population_logjnd_probe_interaction_effect_mean;
 	real population_logjnd_judgement_type_interaction_effect_mean;
-	real population_pss_initial_bias_interaction_effect_mean;
+	real population_logjnd_initial_bias_interaction_effect_mean;
 	//population sds
 	real<lower=0,upper=pi()/2> zpopulation_pss_intercept_sd ;
 	real<lower=0,upper=pi()/2> zpopulation_pss_effect_sd ; 
