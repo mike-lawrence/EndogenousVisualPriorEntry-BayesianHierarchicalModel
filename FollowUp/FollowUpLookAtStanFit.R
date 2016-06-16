@@ -7,7 +7,7 @@ library(grid)
 library(sprintfr)
 
 setwd("~/Documents/TOJ/Follow-Up")
-load("FollowUptoj_color_post_June14th2016")
+load("FollowUptoj_color_post_June15th2016")
 load("FollowUp_color_trials.Rdata")
 load("FollowUp_toj_trials.Rdata")
 
@@ -469,64 +469,87 @@ rhoeffect_ids = ddply(
     x_use = x[x$parameter == "logitRhoEffectMean",]$value
     logitrhoeffect_use =  median(logitrhoeffect) + median(logitrhoeffectsd)*median(x_use)  +median(logitrhointeractioneffect)*probefactor[i]
     df = data.frame(logitrhoeffect_use, probefactor[i])
-    names(df) = c("logitrhoeffect", "probefactor")
+    names(df) = c("value", "probefactor")
     return(df)
   }
 )
 
-# psseffect_v_rhoeffect2 = merge(rhoeffect_ids, psseffect_ids)
-# 
-# # get rid of outliers
-# outlier_points = psseffect_v_rhoeffect2[psseffect_v_rhoeffect2$psseffect > 0.035,]
-# 
-# psseffect_v_rhoeffect = psseffect_v_rhoeffect2[!(psseffect_v_rhoeffect2$logitrhoeffect %in% outlier_points$logitrhoeffect),]
-
 psseffect_v_rhoeffect = merge(rhoeffect_ids, psseffect_ids)
 
-# plot
-ggplot(data = psseffect_v_rhoeffect, aes(y =psseffect, x = logitrhoeffect, colour = factor(probefactor), shape = factor(probefactor)))+
-  scale_y_continuous(name = "Half PSS Effect Mean (Normalized)")+
-  scale_x_continuous(name = "Logit \u03C1 Effect Mean")+
-  scale_colour_discrete(name = "Probe\nDuration", labels = c("Short", "Long"))+
-  scale_shape_discrete(name = "Probe\nDuration",labels = c("Short", "Long") )+
-  geom_point(size = 3)+
-  geom_smooth(
-    data = psseffect_v_rhoeffect[psseffect_v_rhoeffect$probefactor == +1,]
-    , aes(y = psseffect, x = logitrhoeffect)
-    , method = "lm", se = FALSE, size = 1, linetype = "dotted")+
-  geom_smooth(
-    data = psseffect_v_rhoeffect[psseffect_v_rhoeffect$probefactor == -1,]
-    , aes(y = psseffect, x = logitrhoeffect)
-    , method = "lm", se = FALSE, size = 1, linetype = "dotted")+
-  geom_vline(xintercept = 0, linetype = 2, size = 1)+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-#   geom_point(data = outlier_points, aes(y = psseffect, x = logitrhoeffect), size = 3)+
-#   geom_point(data = outlier_points, aes(y = psseffect, x = logitrhoeffect), size = 1.5, colour = "grey90")+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1))
+get_scat = function(data, x_lab, y_lab, cor_val, cor_lab) {
+  data_forgg = data  
   
+#   fn = function(probefactor, judgementfactor) {
+#     if (probefactor == 1) {
+#       if (judgementfactor == 1) {
+#         factor = "long & second"
+#       } else {
+#         factor = "long & first"
+#       }
+#     } else {
+#       if (judgementfactor == 1) {
+#         factor = "short & second"
+#       } else {
+#         factor = "short & first"
+#       }
+#     }
+#    
+#     return(factor)
+#   }
+#   
+#   data_forgg = ddply(
+#     .data = data
+#     , .variables = .(participant)
+#     , .fun = transform 
+#     , factor = fn(probefactor, judgementfactor)     
+#   )
+  
+  gg1 = ggplot(data = data_forgg, aes(y = psseffect, x = value, colour = factor(probefactor), shape = factor(probefactor), fill = factor(judgementfactor)))+
+    scale_y_continuous(name = y_lab)+
+    scale_x_continuous(name = x_lab)+
+    geom_vline(xintercept = 0, linetype = 2, size = 1)+
+    geom_hline(yintercept = 0, linetype = 2, size = 1)+
+    geom_point(size = 4)+
+    scale_shape_manual(name = "Probe\nDuration", labels = c("Short", "Long") , values = c(21,22) )+
+    scale_fill_manual(name = "Judgement\nType", labels = c("Second", "First"), values = c("white", "black"))+
+    scale_colour_manual(name = "Probe\nDuration", labels =c("Short", "Long"), values = c("red", "blue") )+
+    theme_gray(base_size = 30)+
+    theme(panel.grid.major = element_line(size = 1.5)
+          ,panel.grid.minor = element_line(size = 1))
+          # , legend.position = "none")
+  
+  print(gg1)
+  
+  ### Violin
+  gg2 = ggplot(
+    data = pos_corr[pos_corr$parameter == cor_val,]
+    , aes(x = parameter, y = value)
+  )+
+    geom_violin()+
+    labs(x = cor_lab, y = "Correlation Coefficient (r)")+
+    stat_summary(fun.data = get_95_HDI, size = 0.7)+
+    stat_summary(fun.data = get_50_HDI, size = 2.5)+  
+    geom_hline(yintercept = 0, linetype = 2, size = 1)+
+    theme_gray(base_size = 30)+
+    theme(panel.grid.major = element_line(size = 1.5)
+          ,panel.grid.minor = element_line(size = 1)
+          , axis.text.x = element_blank()
+          , axis.ticks.x = element_blank()) 
+  
+  print(gg2)
+  
+  HDI95 = get_95_HDI( pos_corr[pos_corr$parameter == cor_val,]$value ) 
+  
+  return(HDI95)
+}
 
-### Violin
-ggplot(
-  data = pos_corr[pos_corr$parameter == "value.2.7",]
-  , aes(x = parameter, y = value)
-)+
-  geom_violin()+
-  labs(x = "Logit \u03C1 vs. PSS Effect Means", y = "Correlation Coefficient (r)")+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+  
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.text.x = element_blank()
-        , axis.ticks.x = element_blank()) 
-
-# get interval
-get_95_HDI( pos_corr[pos_corr$parameter == "value.2.7",]$value)
+get_scat(psseffect_v_rhoeffect
+         , "Logit \u03C1 Effect Mean"
+         , "PSS Effect Mean"
+         , "value.2.7"
+         , "Logit \u03C1 vs. PSS Effect Means"
+         )
 #---------------------------- Rho vs. PSS Effects -----------------------------------------#
-
 
 
 #---------------------------- Kappa vs. PSS Effects ---------------------------------------#
@@ -550,61 +573,20 @@ kappaeffect_ids = ddply(
     x_use = x[x$parameter == "logKappaEffectMean",]$value
     logkappaeffect_use =  median(logkappaeffect) + median(logkappaeffectsd)*median(x_use)  +median(logkappainteractioneffect)*probefactor[i]
     df = data.frame(logkappaeffect_use, probefactor[i])
-    names(df) = c("logkappaeffect","probefactor")
+    names(df) = c("value","probefactor")
     return(df)
   }
 )
 
-psseffect_v_kappaeffect2 = merge(kappaeffect_ids, psseffect_ids)
+psseffect_v_kappaeffect = merge(kappaeffect_ids, psseffect_ids)
 
-# get rid of outliers
-outlier_points = psseffect_v_kappaeffect2[psseffect_v_kappaeffect2$psseffect > 0.035,]
-
-psseffect_v_kappaeffect = psseffect_v_kappaeffect2[!(psseffect_v_kappaeffect2$logkappaeffect %in% outlier_points$logkappaeffect),]
-
-# plot
-ggplot(data = psseffect_v_kappaeffect, aes(y =psseffect, x = logkappaeffect, colour = factor(probefactor), shape = factor(probefactor)))+
-  scale_y_continuous(name = "Half PSS Effect Mean (Normalized)")+
-  scale_x_continuous(name = "Log \u03BA Effect Mean")+
-  scale_colour_discrete(name = "Probe\nDuration", labels = c("Short", "Long"))+
-  scale_shape_discrete(name = "Probe\nDuration",labels = c("Short", "Long") )+
-  geom_point(size = 3)+
-  geom_smooth(
-    data = psseffect_v_kappaeffect[psseffect_v_kappaeffect$probefactor == +1,]
-    , aes(y = psseffect, x = logkappaeffect)
-    , method = "lm", se = FALSE, size = 1, linetype = "dotted")+
-  geom_smooth(
-    data = psseffect_v_kappaeffect[psseffect_v_kappaeffect$probefactor == -1,]
-    , aes(y = psseffect, x = logkappaeffect)
-    , method = "lm", se = FALSE, size = 1, linetype = "dotted")+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  geom_vline(xintercept = 0, linetype = 2, size = 1)+
-    geom_point(data = outlier_points, aes(y = psseffect, x = logkappaeffect), size = 3)+
-    geom_point(data = outlier_points, aes(y = psseffect, x = logkappaeffect), size = 1.5, colour = "grey90")+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1))
-
-### Violin
-ggplot(
-  data = pos_corr[pos_corr$parameter == "value.2.8",]
-  , aes(x = parameter, y = value)
-)+
-  geom_violin()+
-  labs(x = "Log \u03BA vs. PSS Effect Means", y = "Correlation Coefficient (r)")+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+  
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.text.x = element_blank()
-        , axis.ticks.x = element_blank()) 
-
-# get interval
-get_95_HDI( pos_corr[pos_corr$parameter == "value.2.8",]$value)
+get_scat(psseffect_v_kappaeffect
+         , "Log \u03BA Effect Mean"
+         , "Half PSS Effect Mean (Normalized)"
+         , "value.2.8"
+         , "Log \u03BA vs. PSS Effect Means"
+)
 #---------------------------- Kappa vs. PSS Effects ---------------------------------------#
-
 
 
 
@@ -612,609 +594,333 @@ get_95_HDI( pos_corr[pos_corr$parameter == "value.2.8",]$value)
 #--------------------------------- Parameters ---------------------------------------------#
 #------------------------------------------------------------------------------------------#
 
-#---------------------------------- SOA Scale ---------------------------------------------#
-### Intercepts
-pos_SOA_scale = data.frame(  
-  value = c(
-    ex_toj_color_post$population_pss_intercept_mean * 250
-    , exp( ex_toj_color_post$population_logjnd_intercept_mean ) * 250
+get_violin = function(value1, label1, value2 = NULL, label2 = NULL, y_lab, hline = TRUE, facet = FALSE) {
+  df = data.frame(  
+    value = c(
+      value1
+      , value2
+    )
+    , parameter = c(
+      rep(label1, 60000)  
+      , rep(label2, 60000)  
+    )
   )
-  , parameter = c(
-    rep("PSS Intercept Mean", 80000)  
-    , rep("JND Intercept Mean", 80000)  
-  )
+  
+  print("is 60,000 instead of 80,000 right now")
+  
+  gg = ggplot(data = df)+
+    geom_violin(aes(x = parameter, y = value))+
+    labs(x = "", y = y_lab)+
+    stat_summary(aes(x = parameter, y = value), fun.data = get_95_HDI, size = 0.7)+  
+    stat_summary(aes(x = parameter, y = value), fun.data = get_50_HDI, size = 2.5)
+  
+  if (hline) {
+    gg = gg + geom_hline(yintercept = 0, linetype = 2, size = 1)
+  }
+  
+  if (facet) {
+    gg = gg + facet_wrap(~parameter, scales = "free")
+  } 
+  
+  gg = gg + theme_gray(base_size = 30)+
+    theme(
+      panel.grid.major = element_line(size = 1.5)
+      , panel.grid.minor = element_line(size = 1)
+      , strip.background = element_blank()
+      , strip.text.x = element_blank() 
+      , axis.ticks.x = element_blank() 
+    ) 
+  
+  print(gg)
+  
+  print("value 1"); print(get_95_HDI(value1) )
+  if ( is.null(value2) ) {
+    to_print = NA
+  } else {
+    to_print = get_95_HDI(value2)
+  } 
+  print("value 2"); print( to_print )
+}
+
+#---------------------------------- SOA Intercepts ----------------------------------------#
+get_violin(
+  ex_toj_color_post$population_pss_intercept_mean * 250
+  , "PSS Intercept Mean"
+  , exp( ex_toj_color_post$population_logjnd_intercept_mean ) * 250
+  , "JND Intercept Mean"
+  , y_lab = "SOA (ms)"
+  , hline = FALSE
+  , facet = TRUE
+)
+#---------------------------------- SOA Intercepts ----------------------------------------#
+
+
+#---------------------------------- SOA Attention Effects ---------------------------------#
+# effect of attention on PSS and JND
+get_violin(
+  ( (ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_effect_mean/2) 
+    - (ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_effect_mean/2) ) * 250
+  , "PSS Effect Mean"
+  , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_effect_mean/2 )
+      - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_effect_mean/2  ) ) * 250 
+  , "JND Effect Mean"
+  , y_lab = "SOA (Right - Left; ms)"
+)
+#---------------------------------- SOA Attention Effects ---------------------------------#
+
+
+#---------------------------------- SOA Judgement Effects ---------------------------------#
+# effect of judgement type (Q) on PSS and JND
+get_violin(
+  ( ex_toj_color_post$population_pss_judgement_type_effect_mean ) * 250 
+  , "PSS Judgement\nType Effect Mean"
+  , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_judgement_type_effect_mean/2 )
+      - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_judgement_type_effect_mean/2  ) ) * 250 
+  , "JND Judgement\nType Effect Mean"
+  , y_lab = "SOA (Second - First; ms)"
 )
 
-# plot
-ggplot(data = pos_SOA_scale)+
-  geom_violin(aes(x = parameter, y = value))+
-  labs(x = "", y = "SOA (ms)")+
-  stat_summary(aes(x = parameter, y = value), fun.data = get_95_HDI, size = 0.7)+  # a bit thicker
-  stat_summary(aes(x = parameter, y = value), fun.data = get_50_HDI, size = 2.5)+
-  facet_wrap(~parameter, scales = "free")+
-  theme_gray(base_size = 30)+
-  theme(
-    panel.grid.major = element_line(size = 1.5)
-    , panel.grid.minor = element_line(size = 1)
-    , strip.background = element_blank()
-    , strip.text.x = element_blank() 
-    , axis.ticks.x = element_blank()
-  )
-
-# 95% HDIs 
-# pss intercept
-get_95_HDI(ex_toj_color_post$population_pss_intercept_mean*250)
-# jnd intercept 
-get_95_HDI(exp( ex_toj_color_post$population_logjnd_intercept_mean ) * 250)
-
-### Effects 
-pos_SOA_scale_effects = data.frame(  
-  effect = c(
-    ( (ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_effect_mean/2) 
-      - (ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_effect_mean/2) ) * 250
-    , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_effect_mean/2 )
-        - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_effect_mean/2  ) ) * 250 
-  )
-  , parameter = c(
-    rep("PSS Effect Mean", 80000)
-    , rep("JND Effect Mean", 80000)
-  )
+#  effect of interaction between judgement type and attention on PSS 
+get_violin(
+  (ex_toj_color_post$population_pss_judgement_type_interaction_effect_mean) * 250
+  , "PSS Judgement Type\nInteraction Effect Mean"
+  , y_lab = "SOA (ms)"
 )
 
-ggplot(data = pos_SOA_scale_effects, aes(x = parameter, y = effect))+
-  geom_violin()+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  labs(x = "", y = "SOA (Right - Left; ms)")+
-  #  scale_x_discrete(labels = c("PSS Effect Mean", "JND Effect Mean"))+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
-
-# 95% HDIs
-# pss effect 
-get_95_HDI(ex_toj_color_post$population_pss_effect_mean*250 )  
-# jnd effect 
-get_95_HDI(
-  ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_effect_mean/2 )
-    - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_effect_mean/2  ) ) * 250 
+#  effect of interaction between judgement type and attention on JND
+get_violin(
+  ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_judgement_type_interaction_effect_mean/2 )
+    - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_judgement_type_interaction_effect_mean/2  ) ) * 250 
+  , "JND Judgement Type\nInteraction Effect Mean"
+  , y_lab = "SOA (ms)"
 )
 
-### Judgement Type Effect 
-pos_SOA_scale_judgement_type = data.frame(  
-  effect = c(
-    ( (ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_judgement_type_effect_mean/2) 
-      - (ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_judgement_type_effect_mean/2) ) * 250
-    , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_judgement_type_effect_mean/2 )
-        - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_judgement_type_effect_mean/2  ) ) * 250 
-  )
-  , parameter = c(
-    rep("PSS Judgement Type Effect Mean", 80000)
-    , rep("JND Judgement Type Effect Mean", 80000)
-  )
+# effect of attention on PSS by judgement type
+get_violin(
+  ( (ex_toj_color_post$population_pss_intercept_mean + (ex_toj_color_post$population_pss_effect_mean + ex_toj_color_post$population_pss_judgement_type_interaction_effect_mean)/2) 
+    - (ex_toj_color_post$population_pss_intercept_mean - (ex_toj_color_post$population_pss_effect_mean + ex_toj_color_post$population_pss_judgement_type_interaction_effect_mean)/2 ) ) * 250
+  , "PSS Attention Effect\nGiven Second"
+  , ( (ex_toj_color_post$population_pss_intercept_mean + (ex_toj_color_post$population_pss_effect_mean - ex_toj_color_post$population_pss_judgement_type_interaction_effect_mean)/2) 
+      - (ex_toj_color_post$population_pss_intercept_mean - (ex_toj_color_post$population_pss_effect_mean - ex_toj_color_post$population_pss_judgement_type_interaction_effect_mean)/2 ) ) * 250
+  , "PSS Attention Effect\nGiven First"
+  , y_lab = "SOA (Attended - Unattended; ms)"
+)
+#---------------------------------- SOA Judgement Effects ---------------------------------#
+
+
+#------------------------------- SOA Initial Bias Effects ---------------------------------#
+# effect of initial bias on PSS and JND
+get_violin(
+  ( ex_toj_color_post$population_pss_initial_bias_effect_mean ) * 250
+  , "PSS Initial Probe\nBias Effect Mean"
+  , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_initial_bias_effect_mean/2 )
+      - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_initial_bias_effect_mean/2  ) ) * 250 
+  , "JND Initial Probe\nBias Effect Mean"
+  , y_lab = "SOA (Left - Right; ms)"
+)
+#------------------------------- SOA Initial Bias Effects ---------------------------------#
+
+
+#------------------------------- SOA Probe Duration Effects -------------------------------#
+# effect of probe duration on PSS and JND
+get_violin(
+  ( ex_toj_color_post$population_pss_probe_effect_mean ) * 250
+  , "PSS Probe Duration\nBias Effect Mean"
+  , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_probe_effect_mean/2 )
+      - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_probe_effect_mean/2  ) ) * 250 
+  , "JND Probe Duration\nBias Effect Mean"
+  , y_lab = "SOA (Long - Short; ms)"
 )
 
-ggplot(data = pos_SOA_scale_judgement_type, aes(x = parameter, y = effect))+
-  geom_violin()+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  labs(x = "", y = "SOA (First - Second; ms)")+
-  scale_x_discrete(labels = c("JND Judgement\nType Effect Mean", "PSS Judgement\nType Effect Mean"))+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
-
-# 95% HDIs
-# pss effect 
-get_95_HDI(ex_toj_color_post$population_pss_judgement_type_effect_mean*250 )  
-# jnd effect 
-get_95_HDI(
-  ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_judgement_type_effect_mean/2 )
-    - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_judgement_type_effect_mean/2  ) ) * 250 
-)
-
-### Initial Bias 
-pos_SOA_scale_initial_bias = data.frame(  
-  effect = c(
-    ( (ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_initial_bias_effect_mean/2) 
-      - (ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_initial_bias_effect_mean/2) ) * 250
-    , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_initial_bias_effect_mean/2 )
-        - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_initial_bias_effect_mean/2  ) ) * 250 
-  )
-  , parameter = c(
-    rep("PSS Initial Probe Bias Effect Mean", 80000)
-    , rep("JND Initial Probe Bias Effect Mean", 80000)
-  )
-)
-
-ggplot(data = pos_SOA_scale_initial_bias, aes(x = parameter, y = effect))+
-  geom_violin()+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  labs(x = "", y = "SOA (Left - Right; ms)")+
-  scale_x_discrete(labels = c("JND Initial Probe\nBias Effect Mean", "PSS Initial Probe\nBias Effect Mean"))+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
-
-# 95% HDIs
-# pss effect 
-get_95_HDI(ex_toj_color_post$population_pss_initial_bias_effect_mean*250 )  
-# jnd effect 
-get_95_HDI(
-  ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_initial_bias_effect_mean/2 )
-    - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_initial_bias_effect_mean/2  ) ) * 250 
-)
-
-### Probe Duration 
-pos_SOA_scale_probe = data.frame(  
-  effect = c(
-    ( (ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_probe_effect_mean/2) 
-      - (ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_probe_effect_mean/2) ) * 250
-    , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_probe_effect_mean/2 )
-        - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_probe_effect_mean/2  ) ) * 250 
-  )
-  , parameter = c(
-    rep("PSS Probe Duration Bias Effect Mean", 80000)
-    , rep("JND Probe Duration Bias Effect Mean", 80000)
-  )
-)
-
-ggplot(data = pos_SOA_scale_probe, aes(x = parameter, y = effect))+
-  geom_violin()+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  labs(x = "", y = "SOA (Long - Short; ms)")+
-  scale_x_discrete(labels = c("JND Probe Duration\nBias Effect Mean", "PSS Probe Duration\nBias Effect Mean"))+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
-
-# 95% HDIs
-# pss effect 
-get_95_HDI(ex_toj_color_post$population_pss_probe_effect_mean*250 )  
-# jnd effect 
-get_95_HDI(
-  ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_probe_effect_mean/2 )
-    - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_probe_effect_mean/2  ) ) * 250 
-)
-
-### PSS Interaction
-pos_SOA_interaction = data.frame(  
-  effect = c(
-    (ex_toj_color_post$population_pss_probe_interaction_effect_mean) * 250
-  )
-  , parameter = c(
-    rep("PSS Interaction Effect Mean", 80000)
-  )
-)
-
-ggplot(data = pos_SOA_interaction, aes(x = parameter, y = effect))+
-  geom_violin()+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  labs(x = "", y = "SOA (ms)")+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
-
-# 95% HDIs
-# interaction effect
-get_95_HDI(
+# effect of interaction between probe duration and attention on PSS
+get_violin(
   (ex_toj_color_post$population_pss_probe_interaction_effect_mean) * 250
+  , "PSS Probe Duration\nInteraction Effect Mean"
+  , y_lab = "SOA (ms)"
 )
 
-### JND Interaction
-pos_SOA_jnd_interaction = data.frame(  
-  effect = c(
-    (ex_toj_color_post$population_logjnd_probe_interaction_effect_mean) * 250
-  )
-  , parameter = c(
-    rep("JND Interaction Effect Mean", 80000)
-  )
+# effect of interaction between probe duration and attention on JND
+get_violin(
+  ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_probe_interaction_effect_mean/2 )
+    - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_probe_interaction_effect_mean/2  ) ) * 250 
+  , "JND Probe Duration\nInteraction Effect Mean"
+  , y_lab = "SOA (ms)"
 )
 
-ggplot(data = pos_SOA_jnd_interaction, aes(x = parameter, y = effect))+
-  geom_violin()+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  labs(x = "", y = "SOA (ms)")+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
-
-# 95% HDIs
-# interaction effect
-get_95_HDI(
-  (ex_toj_color_post$population_logjnd_probe_interaction_effect_mean) * 250
-)
-
-
-### INTUITIVE PSS Interaction
-pos_SOA_interaction_effects = data.frame(  
-  effect = c(
-    ( (ex_toj_color_post$population_pss_intercept_mean + (ex_toj_color_post$population_pss_effect_mean + ex_toj_color_post$population_pss_probe_interaction_effect_mean)/2) 
-      - (ex_toj_color_post$population_pss_intercept_mean - (ex_toj_color_post$population_pss_effect_mean + ex_toj_color_post$population_pss_probe_interaction_effect_mean)/2 ) ) * 250
-    , ( (ex_toj_color_post$population_pss_intercept_mean + (ex_toj_color_post$population_pss_effect_mean - ex_toj_color_post$population_pss_probe_interaction_effect_mean)/2) 
-        - (ex_toj_color_post$population_pss_intercept_mean - (ex_toj_color_post$population_pss_effect_mean - ex_toj_color_post$population_pss_probe_interaction_effect_mean)/2 ) ) * 250
-  )
-  , parameter = c(
-    rep("PSS Attention Effect Long", 80000)
-    , rep("PSS Attention Effect Short", 80000)
-  )
-)
-
-ggplot(data = pos_SOA_interaction_effects, aes(x = parameter, y = effect))+
-  geom_violin()+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  labs(x = "", y = "SOA (Attended - Unattended; ms)")+
-  scale_x_discrete(labels = c("PSS Attention Effect\nGiven Long\nProbe Duration", "PSS Attention Effect\nGiven Short\nProbe Duration"))+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
-
-# 95% HDIs
-# long effect
-get_95_HDI(
+# effect of attention on PSS by judgement type
+get_violin(
   ( (ex_toj_color_post$population_pss_intercept_mean + (ex_toj_color_post$population_pss_effect_mean + ex_toj_color_post$population_pss_probe_interaction_effect_mean)/2) 
-             - (ex_toj_color_post$population_pss_intercept_mean - (ex_toj_color_post$population_pss_effect_mean + ex_toj_color_post$population_pss_probe_interaction_effect_mean)/2 ) ) * 250
-)  
-# short effect 
-get_95_HDI(
-  ( (ex_toj_color_post$population_pss_intercept_mean + (ex_toj_color_post$population_pss_effect_mean - ex_toj_color_post$population_pss_probe_interaction_effect_mean)/2) 
-    - (ex_toj_color_post$population_pss_intercept_mean - (ex_toj_color_post$population_pss_effect_mean - ex_toj_color_post$population_pss_probe_interaction_effect_mean)/2 ) ) * 250
+    - (ex_toj_color_post$population_pss_intercept_mean - (ex_toj_color_post$population_pss_effect_mean + ex_toj_color_post$population_pss_probe_interaction_effect_mean)/2 ) ) * 250
+  , "PSS Attention Effect\nGiven Long\nProbe Duration"
+  , ( (ex_toj_color_post$population_pss_intercept_mean + (ex_toj_color_post$population_pss_effect_mean - ex_toj_color_post$population_pss_probe_interaction_effect_mean)/2) 
+      - (ex_toj_color_post$population_pss_intercept_mean - (ex_toj_color_post$population_pss_effect_mean - ex_toj_color_post$population_pss_probe_interaction_effect_mean)/2 ) ) * 250
+  , "PSS Attention Effect\nGiven Short\nProbe Duration"
+  , y_lab = "SOA (Attended - Unattended; ms)"
 )
-#---------------------------------- SOA Scale ---------------------------------------------#
+#------------------------------- SOA Probe Duration Effects -------------------------------#
 
 
-#---------------------------------- Rho Scale ---------------------------------------------#
-### Intercepts
-pos_rho_scale = data.frame(  
-  value = c(
-    plogis(ex_toj_color_post$logitRhoMean)
-  )
-  , parameter = c(
-    rep("rhoInterceptMean", 80000)
-  )
+#---------------------------------- Rho Intercept -----------------------------------------#
+get_violin(
+  plogis(ex_toj_color_post$logitRhoMean)
+  , "Probability of Memory Intercept Mean"
+  , y_lab = "\u03C1"
+  , hline = FALSE
 )
+#---------------------------------- Rho Intercept -----------------------------------------#
 
-ggplot(data = pos_rho_scale, aes(x = parameter, y = value))+
-  geom_violin()+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  labs(x = "", y = "\u03C1")+
-  scale_x_discrete(labels = c("Probability of Memory Intercept Mean"))+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
 
-# 95% HDIs
-# rho intercept 
-get_95_HDI( plogis(ex_toj_color_post$logitRhoMean) )
-
-### Effects
-pos_rho_scale_effects = data.frame(  
-  effect = c(
-    ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoEffectMean/2 )
-      - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoEffectMean/2 ) )
-  )
-  , parameter = c(
-    rep("rhoEffectMean", 80000)
-  )
-)
-
-ggplot(data = pos_rho_scale_effects, aes(x = parameter, y = effect))+
-  geom_violin()+
-  labs(x = "", y = "\u03C1 (Attended - Unattended)")+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  scale_x_discrete(labels = c("Probability of Memory Effect Mean"))+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
-
-# 95% HDIs
-# rho effect 
-get_95_HDI( 
+#-------------------------------- Rho Attention Effect ------------------------------------#
+get_violin(
   ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoEffectMean/2 )
-    - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoEffectMean/2 ) ) 
-) 
+    - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoEffectMean/2 ) )
+  , "Probability of Memory Intercept Mean"
+  , y_lab = "\u03C1 (Attended - Unattended)"
+)
+#-------------------------------- Rho Attention Effect ------------------------------------#
 
-### Probe effect
-pos_rho_scale_probe_effects = data.frame(  
-  effect = c(
-    ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoProbeEffectMean/2 )
-      - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoProbeEffectMean/2 ) )
-  )
-  , parameter = c(
-    rep("rhoProbeEffectMean", 80000)
-  )
+
+#-------------------------------- Rho Judgement Effects -----------------------------------#
+get_violin(
+  ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoJudgementTypeEffectMean/2 )
+    - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoJudgementTypeEffectMean/2 ) )
+  , "Probability of Memory\nJudgement Type Effect Mean"
+  , y_lab = "\u03C1 (Second - First)"
 )
 
-ggplot(data = pos_rho_scale_probe_effects, aes(x = parameter, y = effect))+
-  geom_violin()+
-  labs(x = "", y = "\u03C1 (Long - Short)")+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  scale_x_discrete(labels = c("Probability of Memory Probe Effect Mean"))+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
+get_violin(
+  ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoJudgementTypeInteractionEffectMean/2 )
+    - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoJudgementTypeInteractionEffectMean/2 ) )
+  , "Probability of Memory\nJudgement Type Interaction Effect Mean"
+  , y_lab = "\u03C1"
+)
 
-# 95% HDIs
-# rho effect 
-get_95_HDI( 
+get_violin(
+  ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoJudgementTypeEffectMean/2
+           + (ex_toj_color_post$logitRhoEffectMean + ex_toj_color_post$logitRhoJudgementTypeInteractionEffectMean)/2 )
+    - plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoJudgementTypeEffectMean/2
+             - (ex_toj_color_post$logitRhoEffectMean +  ex_toj_color_post$logitRhoJudgementTypeInteractionEffectMean)/2 ) )
+  , "Probability of Memory\nAttention Effect\nGiven Second"
+  , ( plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoJudgementTypeEffectMean/2
+             + (ex_toj_color_post$logitRhoEffectMean - ex_toj_color_post$logitRhoJudgementTypeInteractionEffectMean)/2 )
+      - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoJudgementTypeEffectMean/2
+               - (ex_toj_color_post$logitRhoEffectMean -  ex_toj_color_post$logitRhoJudgementTypeInteractionEffectMean)/2 ) )
+  , "Probability of Memory\nAttention Effect\nGiven First"
+  , y_lab = "\u03C1 (Attended - Unattended)"
+)
+#-------------------------------- Rho Judgement Effects -----------------------------------#
+
+
+#-------------------------------- Rho Probe Effects ---------------------------------------#
+get_violin(
   ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoProbeEffectMean/2 )
-    - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoProbeEffectMean/2 ) ) 
-) 
-
-### Interaction effect
-pos_rho_scale_interaction_effects = data.frame(  
-  effect = c(
-    ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoProbeInteractionEffectMean/2 )
-      - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoProbeInteractionEffectMean/2 ) )
-  )
-  , parameter = c(
-    rep("rhoInteractionEffectMean", 80000)
-  )
+    - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoProbeEffectMean/2 ) )
+  , "Probability of Memory\nProbe Duration Effect Mean"
+  , y_lab = "\u03C1 (Long - Short)"
 )
 
-ggplot(data = pos_rho_scale_interaction_effects, aes(x = parameter, y = effect))+
-  geom_violin()+
-#   labs(x = "", y = "\u03C1 (Long & Attended or Short & Unattended\n- Short & Attended or Long & Unattended)")+
-  labs(x = "", y = "\u03C1")+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  scale_x_discrete(labels = c("Probability of Memory Interaction Effect Mean"))+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
-
-# 95% HDIs
-# rho effect 
-get_95_HDI( 
+get_violin(
   ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoProbeInteractionEffectMean/2 )
     - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoProbeInteractionEffectMean/2 ) )
-) 
-
-### INTUITIVE look at rho interaction
-pos_rho_scale_parameters = data.frame(  
-  effect = c(
-    ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoProbeEffectMean/2
-             + (ex_toj_color_post$logitRhoEffectMean + ex_toj_color_post$logitRhoProbeInteractionEffectMean)/2 )
-      - plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoProbeEffectMean/2
-              - (ex_toj_color_post$logitRhoEffectMean +  ex_toj_color_post$logitRhoProbeInteractionEffectMean)/2 ) )
-    , ( plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoProbeEffectMean/2
-               + (ex_toj_color_post$logitRhoEffectMean - ex_toj_color_post$logitRhoProbeInteractionEffectMean)/2 )
-        - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoProbeEffectMean/2
-                 - (ex_toj_color_post$logitRhoEffectMean -  ex_toj_color_post$logitRhoProbeInteractionEffectMean)/2 ) )
-  )
-  , parameter = c(
-    rep("Rho Attention Effect Given Long", 80000)
-    , rep("Rho Attention Effect Given Short", 80000)
-  )
+  , "Probability of Memory\nProbe Duration Interaction Effect Mean"
+  , y_lab = "\u03C1"
 )
 
-ggplot(data = pos_rho_scale_parameters, aes(x = parameter, y = effect))+
-  geom_violin()+
-  labs(x = "", y = "\u03C1 (Attended - Unattended)")+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  scale_x_discrete(labels = c("Probability of Memory\nAttention Effect\nGiven Long\nProbe Duration"
-                              , "Probability of Memory\nAttention Effect\nGiven Short\nProbe Duration"))+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
-
-# 95% HDIs
-# rho attention effect given long
-get_95_HDI( 
+get_violin(
   ( plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoProbeEffectMean/2
            + (ex_toj_color_post$logitRhoEffectMean + ex_toj_color_post$logitRhoProbeInteractionEffectMean)/2 )
     - plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoProbeEffectMean/2
              - (ex_toj_color_post$logitRhoEffectMean +  ex_toj_color_post$logitRhoProbeInteractionEffectMean)/2 ) )
- ) 
-# rho attention effect given short
-get_95_HDI(
-  ( plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoProbeEffectMean/2
+  , "Probability of Memory\nAttention Effect\nGiven Long\nProbe Duration"
+  , ( plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoProbeEffectMean/2
              + (ex_toj_color_post$logitRhoEffectMean - ex_toj_color_post$logitRhoProbeInteractionEffectMean)/2 )
       - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoProbeEffectMean/2
                - (ex_toj_color_post$logitRhoEffectMean -  ex_toj_color_post$logitRhoProbeInteractionEffectMean)/2 ) )
-  
+  , "Probability of Memory\nAttention Effect\nGiven Short\nProbe Duration"
+  , y_lab = "\u03C1 (Attended - Unattended)"
 )
-#---------------------------------- Rho Scale ---------------------------------------------#
+#-------------------------------- Rho Probe Effects ---------------------------------------#
 
 
-#---------------------------------- Kappa Scale -------------------------------------------#
-### Intercept
-pos_kappa_scale = data.frame(  
-  value = c(
-    exp( ex_toj_color_post$logKappaMean ) # regular scale ~ kappa; log scale ~ kappa prime;
-  )
-  , parameter = c(
-    rep("kappaInterceptMean", 80000)
-  )
+#---------------------------------- Kappa Intercept ---------------------------------------#
+get_violin(
+  exp( ex_toj_color_post$logKappaMean ) 
+  , "Fidelity of Memory Intercept Mean"
+  , y_lab = "\u03BA"
 )
+#---------------------------------- Kappa Intercept ---------------------------------------#
 
-ggplot(data = pos_kappa_scale, aes(x = parameter, y = value))+
-  geom_violin()+
-  labs(x = "", y = "\u03BA")+  # are there any units here?
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  scale_x_discrete(labels = c("Fidelity of Memory Intercept Mean"))+
-  #  scale_y_continuous(limits = c(0,20) ) +
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank())
 
-# 95% HDIs
-# kappa intercept (*radians*)
-get_95_HDI( exp( ex_toj_color_post$logKappaMean ) )
+#-------------------------------- Kappa Attention Effect ----------------------------------#
+get_violin(
+  ( exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaEffectMean/2) 
+    - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaEffectMean/2) )
+  , "Fidelity of Memory Effect Mean"
+  , y_lab = "\u03BA (Attended - Unattended)"
+)
+#-------------------------------- Kappa Attention Effect ----------------------------------#
 
-### Effects
-pos_kappa_scale_effects = data.frame(  
-  value = c(
-    ( exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaEffectMean/2) 
-      - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaEffectMean/2) )
-  )
-  , parameter = c(
-    rep("kappaEffectMean", 80000)
-  )
+
+#-------------------------------- Kappa Judgement Effects ---------------------------------#
+get_violin(
+  ( exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaJudgementTypeEffectMean/2 )
+    - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaJudgementTypeEffectMean/2 ) )
+  , "Fidelity of Memory Judgement Effect Mean"
+  , y_lab = "\u03BA (Second - First)"
 )
 
-ggplot(data = pos_kappa_scale_effects, aes(x = parameter, y = value))+
-  geom_violin()+
-  labs(x = "", y = "\u03BA (Attended - Unattended)")+  # are there any units here?
-  geom_hline(yintercept = 0, linetype = 2, size = 1 ) +
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  scale_x_discrete(labels = c("Fidelity of Memory Effect Mean"))+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank())
-
-# 95% HDIs
-# kappa effects (*radians*)
-get_95_HDI( 
-  exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaEffectMean/2) 
-  - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaEffectMean/2) 
+get_violin(
+  ( exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaJudgementTypeInteractionEffectMean/2 )
+    - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaJudgementTypeInteractionEffectMean/2 ) )
+  , "Fidelity of Memory Judgement Type\nInteraction Effect Mean"
+  , y_lab = "\u03BA"
 )
 
-### Probe effect
-pos_kappa_scale_probe_effects = data.frame(  
-  effect = c(
-    ( exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaProbeEffectMean/2 )
-      - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaProbeEffectMean/2 ) )
-  )
-  , parameter = c(
-    rep("kappaProbeEffectMean", 80000)
-  )
+get_violin(
+  ( exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaJudgementTypeEffectMean/2
+        + (ex_toj_color_post$logKappaEffectMean + ex_toj_color_post$logKappaJudgementTypeInteractionEffectMean)/2 )
+    - exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaJudgementTypeEffectMean/2
+          - (ex_toj_color_post$logKappaEffectMean +  ex_toj_color_post$logKappaJudgementTypeInteractionEffectMean)/2 ) )
+  , "Fidelity of Memory\nAttention Effect\nGiven Second"
+  , ( exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaJudgementTypeEffectMean/2
+          + (ex_toj_color_post$logKappaEffectMean - ex_toj_color_post$logKappaJudgementTypeInteractionEffectMean)/2 )
+      - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaJudgementTypeEffectMean/2
+            - (ex_toj_color_post$logKappaEffectMean -  ex_toj_color_post$logKappaJudgementTypeInteractionEffectMean)/2 ) )
+  , "Fidelity of Memory\nAttention Effect\nGiven First"
+  , y_lab = "\u03BA (Attended - Unattended)"
 )
+#-------------------------------- Kappa Judgement Effects ---------------------------------#
 
-ggplot(data = pos_kappa_scale_probe_effects, aes(x = parameter, y = effect))+
-  geom_violin()+
-  labs(x = "", y = "\u03BA (Long - Short)")+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  scale_x_discrete(labels = c("Fidelity of Memory Probe Effect Mean"))+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
 
-# 95% HDIs
-# kappa effect 
-get_95_HDI( 
+#-------------------------------- Kappa Probe Effects -------------------------------------#
+get_violin(
   ( exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaProbeEffectMean/2 )
-    - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaProbeEffectMean/2 ) ) 
-) 
-
-### Interaction effect
-pos_kappa_scale_interaction_effects = data.frame(  
-  effect = c(
-    ( exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaProbeInteractionEffectMean/2 )
-      - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaProbeInteractionEffectMean/2 ) )
-  )
-  , parameter = c(
-    rep("kappaInteractionEffectMean", 80000)
-  )
+    - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaProbeEffectMean/2 ) )
+  , "Fidelity of Memory Probe Effect Mean"
+  , y_lab = "\u03BA (Long - Short)"
 )
 
-ggplot(data = pos_kappa_scale_interaction_effects, aes(x = parameter, y = effect))+
-  geom_violin()+
-#   labs(x = "", y = "\u03BA (Long & Attended or Short & Unattended\n- Short & Attended or Long & Unattended)")+
-  labs(x = "", y = "\u03BA")+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  scale_x_discrete(labels = c("Fidelity of Memory Interaction Effect Mean"))+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
-
-# 95% HDIs
-# kappa effect 
-get_95_HDI( 
+get_violin(
   ( exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaProbeInteractionEffectMean/2 )
     - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaProbeInteractionEffectMean/2 ) )
-) 
-
-### INTUITIVE look at kappa interaction
-pos_kappa_interaction = data.frame(  
-  effect = c(
-    ( exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaProbeEffectMean/2
-             + (ex_toj_color_post$logKappaEffectMean + ex_toj_color_post$logKappaProbeInteractionEffectMean)/2 )
-      - exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaProbeEffectMean/2
-               - (ex_toj_color_post$logKappaEffectMean +  ex_toj_color_post$logKappaProbeInteractionEffectMean)/2 ) )
-    , ( exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaProbeEffectMean/2
-               + (ex_toj_color_post$logKappaEffectMean - ex_toj_color_post$logKappaProbeInteractionEffectMean)/2 )
-        - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaProbeEffectMean/2
-                 - (ex_toj_color_post$logKappaEffectMean -  ex_toj_color_post$logKappaProbeInteractionEffectMean)/2 ) )
-  )
-  , parameter = c(
-    rep("kappa Attention Effect Given Long", 80000)
-    , rep("kappa Attention Effect Given Short", 80000)
-  )
+  , "Fidelity of Memory Probe Duration\nInteraction Effect Mean"
+  , y_lab = "\u03BA"
 )
 
-ggplot(data = pos_kappa_interaction, aes(x = parameter, y = effect))+
-  geom_violin()+
-  labs(x = "", y = "\u03BA (Attended - Unattended)")+
-  geom_hline(yintercept = 0, linetype = 2, size = 1)+
-  stat_summary(fun.data = get_95_HDI, size = 0.7)+
-  stat_summary(fun.data = get_50_HDI, size = 2.5)+
-  scale_x_discrete(labels = c("Fidelity of Memory\nAttention Effect\nGiven Long\nProbe Duration"
-                              , "Fidelity of Memory\nAttention Effect\nGiven Short\nProbe Duration"))+
-  theme_gray(base_size = 30)+
-  theme(panel.grid.major = element_line(size = 1.5)
-        ,panel.grid.minor = element_line(size = 1)
-        , axis.ticks.x = element_blank()) 
-
-# 95% HDIs
-# kappa attention effect given long
-get_95_HDI( 
+get_violin(
   ( exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaProbeEffectMean/2
-           + (ex_toj_color_post$logKappaEffectMean + ex_toj_color_post$logKappaProbeInteractionEffectMean)/2 )
+        + (ex_toj_color_post$logKappaEffectMean + ex_toj_color_post$logKappaProbeInteractionEffectMean)/2 )
     - exp(ex_toj_color_post$logKappaMean + ex_toj_color_post$logKappaProbeEffectMean/2
-             - (ex_toj_color_post$logKappaEffectMean +  ex_toj_color_post$logKappaProbeInteractionEffectMean)/2 ) )
-) 
-# kappa attention effect given short
-get_95_HDI(
-  ( exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaProbeEffectMean/2
-           + (ex_toj_color_post$logKappaEffectMean - ex_toj_color_post$logKappaProbeInteractionEffectMean)/2 )
-    - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaProbeEffectMean/2
-             - (ex_toj_color_post$logKappaEffectMean -  ex_toj_color_post$logKappaProbeInteractionEffectMean)/2 ) )
-  
+          - (ex_toj_color_post$logKappaEffectMean +  ex_toj_color_post$logKappaProbeInteractionEffectMean)/2 ) )
+  , "Fidelity of Memory\nAttention Effect\nGiven Long\nProbe Duration"
+  , ( exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaProbeEffectMean/2
+          + (ex_toj_color_post$logKappaEffectMean - ex_toj_color_post$logKappaProbeInteractionEffectMean)/2 )
+      - exp(ex_toj_color_post$logKappaMean - ex_toj_color_post$logKappaProbeEffectMean/2
+            - (ex_toj_color_post$logKappaEffectMean -  ex_toj_color_post$logKappaProbeInteractionEffectMean)/2 ) )
+  , "Fidelity of Memory\nAttention Effect\nGiven Short\nProbe Duration"
+  , y_lab = "\u03BA (Attended - Unattended)"
 )
-
+#-------------------------------- Kappa Probe Effects -------------------------------------#
 
 
 
