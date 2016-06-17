@@ -56,11 +56,15 @@ parameters{
   real logKappaProbeEffectMean;
   real logitRhoJudgementTypeEffectMean;
   real logKappaJudgementTypeEffectMean;
+  real logitRhoInitialBiasEffectMean;
+  real logKappaInitialBiasEffectMean;
   // between vs. within subject interaction terms
   real logitRhoProbeInteractionEffectMean;
   real logKappaProbeInteractionEffectMean;
   real logitRhoJudgementTypeInteractionEffectMean;
   real logKappaJudgementTypeInteractionEffectMean;
+  real logitRhoInitialBiasInteractionEffectMean;
+  real logKappaInitialBiasInteractionEffectMean;
   // SDs for population parameters
   real<lower=0,upper=pi()/2> zlogitRhoSD;
   real<lower=0,upper=pi()/2> zlogKappaSD;
@@ -143,16 +147,20 @@ transformed parameters{
     for(n in 1:N_color){
       logitRho[n] <- logitRhoMean + beta[n,5]*logitRhoSD 
       + condition_probe[n]*logitRhoProbeEffectMean/2
-      + condition_judgement_type[n]*logitRhoJudgementTypeEffectMean/2; 
+      + condition_judgement_type[n]*logitRhoJudgementTypeEffectMean/2
+      + condition_initial_bias[n]*logitRhoInitialBiasEffectMean/2; 
       logKappa[n] <- logKappaMean + beta[n,6]*logKappaSD 
       + condition_probe[n]*logKappaProbeEffectMean/2
-      + condition_judgement_type[n]*logKappaJudgementTypeEffectMean/2; 
+      + condition_judgement_type[n]*logKappaJudgementTypeEffectMean/2 
+      + condition_initial_bias[n]*logKappaInitialBiasEffectMean/2;
       logitRhoEffect[n] <- logitRhoEffectMean + beta[n,7]*logitRhoEffectSD 
       + condition_probe[n]*logitRhoProbeInteractionEffectMean
-      + condition_judgement_type[n]*logitRhoJudgementTypeInteractionEffectMean;
+      + condition_judgement_type[n]*logitRhoJudgementTypeInteractionEffectMean
+      + condition_initial_bias[n]*logitRhoInitialBiasInteractionEffectMean;
       logKappaEffect[n] <- logKappaEffectMean + beta[n,8]*logKappaEffectSD 
       + condition_probe[n]*logKappaProbeInteractionEffectMean
-      + condition_judgement_type[n]*logKappaJudgementTypeInteractionEffectMean;
+      + condition_judgement_type[n]*logKappaJudgementTypeInteractionEffectMean
+      + condition_initial_bias[n]*logKappaInitialBiasInteractionEffectMean;
       rho[1,n] <- inv_logit( logitRho[n] - logitRhoEffect[n]/2 ) ;  // unattended is 1, is minus
       rho[2,n] <- inv_logit( logitRho[n] + logitRhoEffect[n]/2 ) ;  // attended is 2, is plus
       kappa[1,n] <- exp( logKappa[n] - logKappaEffect[n]/2  ) ;
@@ -203,6 +211,10 @@ model{
   logKappaJudgementTypeEffectMean ~ normal(0,3);
   logitRhoJudgementTypeInteractionEffectMean ~ normal(0,3);
   logKappaJudgementTypeInteractionEffectMean ~ normal(0,3);
+  logitRhoInitialBiasEffectMean ~ normal(0,3);
+  logKappaInitialBiasEffectMean ~ normal(0,3);
+  logitRhoInitialBiasInteractionEffectMean ~ normal(0,3);
+  logKappaInitialBiasInteractionEffectMean ~ normal(0,3);
   // logitRhoSD ~ weibull(2,2);#student_t(4,0,2);
   // logKappaSD ~ weibull(2,2);#student_t(4,0,1);
   // logitRhoEffectSD ~ weibull(2,2);#student_t(4,0,1);

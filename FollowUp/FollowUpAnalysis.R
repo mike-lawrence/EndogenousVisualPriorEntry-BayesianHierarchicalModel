@@ -278,10 +278,10 @@ toj_color_post = sampling(
   object = toj_color_model
   , data = toj_color_data_for_stan
   , iter = 1e4*2
-  , chains = 1
-  , cores = 1
+  , chains = 8
+  , cores = 8
   , pars = c('trial_prob', 'p')  
   , include = FALSE
 )
 print(toj_color_post)
-save(toj_color_post, file = "FollowUptoj_color_post_June16th2016")
+save(toj_color_post, file = "FollowUptoj_color_post_June17th2016")
