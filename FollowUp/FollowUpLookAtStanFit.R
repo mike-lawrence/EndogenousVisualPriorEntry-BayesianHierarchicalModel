@@ -10,7 +10,7 @@ setwd("~/Documents/TOJ/Follow-Up")
 load("FollowUptoj_color_post_June15th2016")
 load("FollowUp_color_trials.Rdata")
 load("FollowUp_toj_trials.Rdata")
-
+source("../EndogenousVisualPriorEntry-BayesianHierarchicalModel/functions.R")
 
 
 ############################################################################################
@@ -128,29 +128,6 @@ real_toj = data.frame(
 
 
 #-------------------------------------- TOJ Simulated Data --------------------------------#
-# function for getting condition-wise samples from calculated mean posteriors 
-get_condition_mean_sample = function(intercept, effect, add, space){
-  if (add) {
-    condition_mean_trans = intercept + effect/2
-  } else {
-    condition_mean_trans = intercept - effect/2
-  }
-  if (space == "log") {
-    condition_mean = exp(condition_mean_trans)*250
-  } else if (space == "null") {
-    condition_mean = (condition_mean_trans)*250
-  } else if (space == "logit") {
-    condition_mean = plogis(condition_mean_trans)
-  } else if (space == "log_free") {
-    condition_mean = exp(condition_mean_trans)
-  } else {
-    print("choose 'space' argument from 'log', 'null', 'log_free'")
-  }
-  condition_mean_reps = sample(condition_mean, 50, replace = T)
-  
-  return(condition_mean_reps)
-}
-
 ### Get PSS Parameters
 pss_intercept_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_pss_intercept_mean",]$value
 pss_effect_mean = gg_toj_color_post[gg_toj_color_post$Parameter == "population_pss_effect_mean",]$value
@@ -193,26 +170,6 @@ jnd_long_mean_reps = get_condition_mean_sample( jnd_intercept_mean,  jnd_probe_d
 
 #-------------------------------------- Do TOJ PPC ----------------------------------------#
 SOAs = c(-250, -150, -100, -50, -17, 17, 50, 100, 150, 250)
-
-do_toj_ppc = function(pss, jnd, main, facteur, level) {
-  df = NULL
-  for (i in 1:length(pss)) {
-    df_temp = data.frame(SOA = SOAs, left_prop = pnorm( SOAs, mean = pss[i], sd = jnd[i]) )
-    df = rbind(df, df_temp)
-  }
-  
-  gg = ggplot(data = df, aes(x = SOA, y = left_prop))+
-    geom_point(alpha = 0.3, colour = "turquoise")+
-    ylab("left proportion")+
-    xlab("SOA")+
-    ggtitle(main)
-  
-  real = data.frame(SOA = SOAs, left_prop = real_toj[real_toj[,"factor"] == facteur & real_toj[,"level"] == level,]$left_first_TF) 
-  
-  gg = gg + geom_point(data = real, aes(x = SOA, y = left_prop), colour = "blue")
-
-  return(gg)
-}
 
 do_toj_ppc(pss_right_mean_reps, jnd_right_mean_reps, "attend right", "block_bias", "RIGHT")
 
@@ -282,37 +239,6 @@ plot( seq(-pi, pi, pi/200), (rho_unattend_short_reps[1])*dvm(seq(-pi, pi, pi/200
       + (1-rho_unattend_short_reps[1]) * dunif(seq(-pi, pi, pi/200), -pi, pi)
       , xlab = "radian deviations", ylab = "density")
 
-do_color_ppc = function(rho, kappa, main, attention_level, probe_level) {
-  df = NULL
-  for (i in 1:length(rho)) {
-    color_dev = c( 
-      rvm(1000*(rho[i]), pi, kappa[i]) - pi
-      , runif(1000*(1- rho[i]), -pi, pi) 
-    )
-    df_temp = data.frame(
-      repi = rep(i, length(color_dev))
-      , color_dev = color_dev
-    )
-    df = rbind(df, df_temp)
-  }
-  
-  gg = ggplot(data = df, aes(color_dev, group = factor(repi)))+
-    geom_density(colour = "turquoise")+
-    xlab("radian deviation")+
-    ggtitle(main)+
-    theme(legend.position = "none")
-  
-  color_dev = color_trials[color_trials[,"attended"]==attention_level & color_trials[,"onehundredms"]==probe_level,]$color_diff_radians
-  real = data.frame(
-    repi = rep(i, length(color_dev))
-    , color_dev = color_dev
-  )
-  
-  gg = gg + geom_density(data = real, aes(color_dev, group = factor(repi)), colour = "blue")
-  
-  return(gg)
-}
-
 do_color_ppc(rho_unattend_short_reps, kappa_unattend_short_reps, "unattend short", FALSE, TRUE)
 
 do_color_ppc(rho_attend_short_reps, kappa_unattend_short_reps, "attend short", TRUE, TRUE)
@@ -327,26 +253,6 @@ do_color_ppc(rho_attend_long_reps, kappa_attend_long_reps,"attend long", TRUE, F
 ############################################################################################
 ####                                       Analysis                                     ####
 ############################################################################################
-get_95_HDI = function(y) {
-  HDI = HPDinterval( as.mcmc( as.vector(y) ), prob = .95 )
-  Den = density( as.vector(y) )
-  min = HDI[1]
-  # mod = Den$x[which(Den$y == max(Den$y))] # mode as indicator of central tendency
-  med = median(y)
-  max = HDI[2]
-  return( c( ymin = min, y = med, ymax = max) )
-}
-
-get_50_HDI = function(y) {
-  HDI = HPDinterval( as.mcmc( as.vector(y) ), prob = .50 )
-  Den = density( as.vector(y) )
-  min = HDI[1]
-  # mod = Den$x[which(Den$y == max(Den$y))]  # mode as indicator of central tendency
-  med = median(y)
-  max = HDI[2]
-  return( c( ymin = min, y = med, ymax = max) )
-}
-
 
 #------------------------------------------------------------------------------------------#
 #--------------------------------- Correlations -------------------------------------------#
@@ -409,16 +315,27 @@ betas$participant = rep(c(1:26), times = 8, each = nrow(betas2))
 
 
 #---------------------------- Rho vs. PSS Effects -----------------------------------------#
-extract_samples = function(parameter, SD = FALSE) {
-  if (SD) {
-    df2 = data.frame(value = tan(ex_toj_color_post[[parameter]]))
-  } else {
-    df2 = data.frame(value = ex_toj_color_post[[parameter]])
-  }
-  df2$iteration = rownames(df2)
-  df = melt( df2 )$value
-  return(df)
+
+# get scatterplot and associated correlation
+get_scat = function(data, x_lab, y_lab) {
+  
+  gg1 = ggplot(data = data, aes(y = psseffect, x = value, colour = factor(probefactor), shape = factor(probefactor), fill = factor(judgementfactor)))+
+    scale_y_continuous(name = y_lab)+
+    scale_x_continuous(name = x_lab)+
+    geom_vline(xintercept = 0, linetype = 2, size = 1)+
+    geom_hline(yintercept = 0, linetype = 2, size = 1)+
+    geom_point(size = 4)+
+    scale_shape_manual(name = "Probe\nDuration", labels = c("Short", "Long") , values = c(21,22) )+
+    scale_fill_manual(name = "Judgement\nType", labels = c("Second", "First"), values = c("white", "black"))+
+    scale_colour_manual(name = "Probe\nDuration", labels =c("Short", "Long"), values = c("red", "blue") )+
+    theme_gray(base_size = 30)+
+    theme(panel.grid.major = element_line(size = 1.5)
+          ,panel.grid.minor = element_line(size = 1))
+
+  return(gg1)
 }
+
+
 
 psseffect = extract_samples("population_pss_effect_mean")
 
@@ -440,8 +357,8 @@ psseffect_ids = ddply(
     x_use = x[x$parameter ==  "population_pss_effect_mean",]$value
     psseffect = (median(psseffect)  + median(psseffectsd)*median(x_use) 
                  + median(pssinteraction)*probefactor[i]
-                 + median(pssjudgementinteraction)*judgementfactor[i])/2
-    df = data.frame(psseffect, probefactor[i], judgementfactor[i])
+                 + median(pssjudgementinteraction)*judgementfactor[i])
+    df = data.frame(psseffect*250, probefactor[i], judgementfactor[i])
     names(df) = c("psseffect", "probefactor", "judgementfactor")
     return(df)
   }
@@ -476,79 +393,16 @@ rhoeffect_ids = ddply(
 
 psseffect_v_rhoeffect = merge(rhoeffect_ids, psseffect_ids)
 
-get_scat = function(data, x_lab, y_lab, cor_val, cor_lab) {
-  data_forgg = data  
-  
-#   fn = function(probefactor, judgementfactor) {
-#     if (probefactor == 1) {
-#       if (judgementfactor == 1) {
-#         factor = "long & second"
-#       } else {
-#         factor = "long & first"
-#       }
-#     } else {
-#       if (judgementfactor == 1) {
-#         factor = "short & second"
-#       } else {
-#         factor = "short & first"
-#       }
-#     }
-#    
-#     return(factor)
-#   }
-#   
-#   data_forgg = ddply(
-#     .data = data
-#     , .variables = .(participant)
-#     , .fun = transform 
-#     , factor = fn(probefactor, judgementfactor)     
-#   )
-  
-  gg1 = ggplot(data = data_forgg, aes(y = psseffect, x = value, colour = factor(probefactor), shape = factor(probefactor), fill = factor(judgementfactor)))+
-    scale_y_continuous(name = y_lab)+
-    scale_x_continuous(name = x_lab)+
-    geom_vline(xintercept = 0, linetype = 2, size = 1)+
-    geom_hline(yintercept = 0, linetype = 2, size = 1)+
-    geom_point(size = 4)+
-    scale_shape_manual(name = "Probe\nDuration", labels = c("Short", "Long") , values = c(21,22) )+
-    scale_fill_manual(name = "Judgement\nType", labels = c("Second", "First"), values = c("white", "black"))+
-    scale_colour_manual(name = "Probe\nDuration", labels =c("Short", "Long"), values = c("red", "blue") )+
-    theme_gray(base_size = 30)+
-    theme(panel.grid.major = element_line(size = 1.5)
-          ,panel.grid.minor = element_line(size = 1))
-          # , legend.position = "none")
-  
-  print(gg1)
-  
-  ### Violin
-  gg2 = ggplot(
-    data = pos_corr[pos_corr$parameter == cor_val,]
-    , aes(x = parameter, y = value)
-  )+
-    geom_violin()+
-    labs(x = cor_lab, y = "Correlation Coefficient (r)")+
-    stat_summary(fun.data = get_95_HDI, size = 0.7)+
-    stat_summary(fun.data = get_50_HDI, size = 2.5)+  
-    geom_hline(yintercept = 0, linetype = 2, size = 1)+
-    theme_gray(base_size = 30)+
-    theme(panel.grid.major = element_line(size = 1.5)
-          ,panel.grid.minor = element_line(size = 1)
-          , axis.text.x = element_blank()
-          , axis.ticks.x = element_blank()) 
-  
-  print(gg2)
-  
-  HDI95 = get_95_HDI( pos_corr[pos_corr$parameter == cor_val,]$value ) 
-  
-  return(HDI95)
-}
+get_scat(
+  psseffect_v_rhoeffect
+  , "Logit \u03C1 Effect Mean"
+  , "PSS Effect Mean"
+)
 
-get_scat(psseffect_v_rhoeffect
-         , "Logit \u03C1 Effect Mean"
-         , "PSS Effect Mean"
-         , "value.2.7"
-         , "Logit \u03C1 vs. PSS Effect Means"
-         )
+get_corr(
+  "value.2.7"
+  , "Logit \u03C1 vs. PSS Effect Means"
+)
 #---------------------------- Rho vs. PSS Effects -----------------------------------------#
 
 
@@ -580,12 +434,16 @@ kappaeffect_ids = ddply(
 
 psseffect_v_kappaeffect = merge(kappaeffect_ids, psseffect_ids)
 
-get_scat(psseffect_v_kappaeffect
-         , "Log \u03BA Effect Mean"
-         , "Half PSS Effect Mean (Normalized)"
-         , "value.2.8"
-         , "Log \u03BA vs. PSS Effect Means"
+get_scat(
+  psseffect_v_kappaeffect
+  , "Log \u03BA Effect Mean"
+  , "PSS Effect Mean"
 )
+ 
+get_corr(
+  "value.2.8"
+  , "Log \u03BA vs. PSS Effect Means"
+)        
 #---------------------------- Kappa vs. PSS Effects ---------------------------------------#
 
 
@@ -593,54 +451,6 @@ get_scat(psseffect_v_kappaeffect
 #------------------------------------------------------------------------------------------#
 #--------------------------------- Parameters ---------------------------------------------#
 #------------------------------------------------------------------------------------------#
-
-get_violin = function(value1, label1, value2 = NULL, label2 = NULL, y_lab, hline = TRUE, facet = FALSE) {
-  df = data.frame(  
-    value = c(
-      value1
-      , value2
-    )
-    , parameter = c(
-      rep(label1, 60000)  
-      , rep(label2, 60000)  
-    )
-  )
-  
-  print("is 60,000 instead of 80,000 right now")
-  
-  gg = ggplot(data = df)+
-    geom_violin(aes(x = parameter, y = value))+
-    labs(x = "", y = y_lab)+
-    stat_summary(aes(x = parameter, y = value), fun.data = get_95_HDI, size = 0.7)+  
-    stat_summary(aes(x = parameter, y = value), fun.data = get_50_HDI, size = 2.5)
-  
-  if (hline) {
-    gg = gg + geom_hline(yintercept = 0, linetype = 2, size = 1)
-  }
-  
-  if (facet) {
-    gg = gg + facet_wrap(~parameter, scales = "free")
-  } 
-  
-  gg = gg + theme_gray(base_size = 30)+
-    theme(
-      panel.grid.major = element_line(size = 1.5)
-      , panel.grid.minor = element_line(size = 1)
-      , strip.background = element_blank()
-      , strip.text.x = element_blank() 
-      , axis.ticks.x = element_blank() 
-    ) 
-  
-  print(gg)
-  
-  print("value 1"); print(get_95_HDI(value1) )
-  if ( is.null(value2) ) {
-    to_print = NA
-  } else {
-    to_print = get_95_HDI(value2)
-  } 
-  print("value 2"); print( to_print )
-}
 
 #---------------------------------- SOA Intercepts ----------------------------------------#
 get_violin(

@@ -97,7 +97,7 @@ transformed parameters{
 			+ population_pss_convention_effect_mean*condition_convention[this_id]/2;
 			pss_effect_per_id[this_id] <- (beta[this_id,2]*population_pss_effect_sd + population_pss_effect_mean
 			+ population_pss_convention_interaction_effect_mean*condition_convention[this_id])/2 ;
-			logjnd_intercept_per_id[this_id] <- beta[this_id,3]*population_logjnd_intercept_sd + population_logjnd_intercept_mean 
+			logjnd_intercept_per_id[this_id] <- beta[this_id,3]*population_logjnd_intercept_sd + population_logjnd_intercept_mean
 			+ population_logjnd_convention_effect_mean*condition_convention[this_id]/2 ;
 			logjnd_effect_per_id[this_id] <- (beta[this_id,4]*population_logjnd_effect_sd + population_logjnd_effect_mean
 			+ population_logjnd_convention_interaction_effect_mean*condition_convention[this_id]) )/2 ;
