@@ -590,10 +590,14 @@ get_violin(
 get_violin(
   ( (ex_toj_color_post$population_pss_intercept_mean + ex_toj_color_post$population_pss_effect_mean/2) 
     - (ex_toj_color_post$population_pss_intercept_mean - ex_toj_color_post$population_pss_effect_mean/2) ) * 250
-  , "PSS Effect Mean"
-  , ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_effect_mean/2 )
+  , "PSS Attention Effect Mean"
+  , y_lab = "SOA (Glove - Base; ms)"
+)
+
+get_violin(
+  ( exp( ex_toj_color_post$population_logjnd_intercept_mean + ex_toj_color_post$population_logjnd_effect_mean/2 )
       - exp( ex_toj_color_post$population_logjnd_intercept_mean - ex_toj_color_post$population_logjnd_effect_mean/2  ) ) * 250 
-  , "JND Effect Mean"
+  , "JND Attention Effect Mean"
   , y_lab = "SOA (Glove - Base; ms)"
 )
 #---------------------------------- SOA Attention Effects ---------------------------------#
@@ -681,12 +685,12 @@ get_violin(
            + (ex_toj_color_post$logitRhoEffectMean + ex_toj_color_post$logitRhoConventionInteractionEffectMean)/2 )
     - plogis(ex_toj_color_post$logitRhoMean + ex_toj_color_post$logitRhoConventionEffectMean/2
              - (ex_toj_color_post$logitRhoEffectMean +  ex_toj_color_post$logitRhoConventionInteractionEffectMean)/2 ) )
-  , "Probability of Memory\nAttention Effect\nGiven Don't Know Convention"
+  , "Probability of Memory\nAttention Effect Given\nDon't Know Convention"
   , ( plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoConventionEffectMean/2
              + (ex_toj_color_post$logitRhoEffectMean - ex_toj_color_post$logitRhoConventionInteractionEffectMean)/2 )
       - plogis(ex_toj_color_post$logitRhoMean - ex_toj_color_post$logitRhoConventionEffectMean/2
                - (ex_toj_color_post$logitRhoEffectMean -  ex_toj_color_post$logitRhoConventionInteractionEffectMean)/2 ) )
-  , "Probability of Memory\nAttention Effect\nGiven Know Convention"
+  , "Probability of Memory\nAttention Effect Given\nKnow Convention"
   , y_lab = "\u03C1 (Attended - Unattended)"
 )
 #-------------------------------- Rho Convention Effects ----------------------------------#
