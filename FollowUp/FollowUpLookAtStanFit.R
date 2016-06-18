@@ -7,7 +7,7 @@ library(grid)
 library(sprintfr)
 
 setwd("~/Documents/TOJ/Follow-Up")
-load("FollowUptoj_color_post_June15th2016")
+load("FollowUptoj_color_post_June17th2016")
 load("FollowUp_color_trials.Rdata")
 load("FollowUp_toj_trials.Rdata")
 source("../EndogenousVisualPriorEntry-BayesianHierarchicalModel/functions.R")
@@ -24,19 +24,33 @@ param_list = c("logitRhoEffectMean"
                , "logitRhoMean"
                , "logitRhoProbeEffectMean"
                , "logitRhoProbeInteractionEffectMean"
+               , "logitRhoJudgementTypeEffectMean"
+               , "logitRhoJudgementTypeInteractionEffectMean"
+               , "logitRhoInitialBiasEffectMean"
+               , "logitRhoInitialBiasInteractionEffectMean"                 
                , "logKappaEffectMean"
                , "logKappaMean"
                , "logKappaProbeEffectMean"
                , "logKappaProbeInteractionEffectMean"
+               , "logKappaJudgementTypeEffectMean"
+               , "logKappaJudgementTypeInteractionEffectMean"
+               , "logKappaInitialBiasEffectMean"
+               , "logKappaInitialBiasInteractionEffectMean"
                , "population_logjnd_effect_mean"
                , "population_logjnd_initial_bias_effect_mean"
+               , "population_logjnd_initial_bias_interaction_effect_mean"
                , "population_logjnd_judgement_type_effect_mean"
+               , "population_logjnd_judgement_type_interaction_effect_mean"
                , "population_logjnd_probe_effect_mean"
+               , "population_logjnd_probe_interaction_effect_mean"
                , "population_logjnd_intercept_mean"
                , "population_pss_effect_mean"
                , "population_pss_initial_bias_effect_mean"
+               , "population_pss_initial_bias_interaction_effect_mean"
                , "population_pss_judgement_type_effect_mean"
-               , "population_pss_probe_effect_mean"  
+               , "population_pss_judgement_type_interaction_effect_mean"
+               , "population_pss_probe_effect_mean" 
+               , "population_pss_probe_interaction_effect_mean" 
                , "population_pss_intercept_mean"
                , "zlogitRhoEffectSD" 
                ,  "zlogitRhoSD"
@@ -310,7 +324,7 @@ betas$parameter = rep( c(
 , times = 1
 , each = nrow(betas2)*length(unique(betas$variable))/8  # 8 is number of parameters 
 )  
-betas$participant = rep(c(1:26), times = 8, each = nrow(betas2))
+betas$participant = rep(c(1:29), times = 8, each = nrow(betas2))
 #-------------------------------------- Get Betas -----------------------------------------#
 
 
