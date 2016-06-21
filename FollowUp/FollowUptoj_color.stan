@@ -27,11 +27,12 @@ parameters{
 	real population_pss_intercept_mean ;
 	real population_pss_effect_mean ; 
 	real population_pss_initial_bias_effect_mean;
+	real population_pss_initial_bias_interaction_effect_mean;
 	real population_pss_judgement_type_effect_mean;
 	real population_pss_probe_effect_mean;
 	real population_pss_probe_interaction_effect_mean;
 	real population_pss_judgement_type_interaction_effect_mean;
-	real population_pss_initial_bias_interaction_effect_mean;
+
 	real population_logjnd_intercept_mean ;
 	real population_logjnd_effect_mean ;
 	real population_logjnd_initial_bias_effect_mean;

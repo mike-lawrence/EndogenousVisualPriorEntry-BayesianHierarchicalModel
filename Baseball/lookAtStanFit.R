@@ -301,11 +301,6 @@ kappa_unattend_dontknow_reps = get_condition_mean_sample(
 
 
 #-------------------------------------- Do Color PPC --------------------------------------#
-# look at mixture model
-plot( seq(-pi, pi, pi/200), (rho_unattend_reps[1])*dvm(seq(-pi, pi, pi/200), 0, kappa_unattend_reps[1]) 
-      + (1-rho_unattend_reps[1]) * dunif(seq(-pi, pi, pi/200), -pi, pi)
-      , xlab = "radian deviations", ylab = "density")
-
 do_color_ppc(
   rho_attend_know_reps
   , kappa_attend_know_reps

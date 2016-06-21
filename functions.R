@@ -24,7 +24,7 @@ get_condition_mean_sample = function(intercept, effect, add, space){
 
 
 # do TOJ Posterior Predictive Check 
-do_toj_ppc = function(pss, jnd, main, factors, levels, y_lab = "left proportion") {
+do_toj_ppc = function(pss, jnd, main, factors, levels, y_lab = "left proportion", real = real_toj) {
   df = NULL
   for (i in 1:length(pss)) {
     df_temp = data.frame(SOA = SOAs, left_prop = pnorm( SOAs, mean = pss[i], sd = jnd[i]) )
@@ -37,7 +37,6 @@ do_toj_ppc = function(pss, jnd, main, factors, levels, y_lab = "left proportion"
     xlab("SOA")+
     ggtitle(main)
   
-  real = real_toj
   i = length(factors)
   while (i > 0) { 
     real = real[real[,factors[i]] == levels[i], ]
@@ -164,15 +163,15 @@ get_corr = function( cor_val, cor_lab) {
 
 
 # get violin plots
-get_violin = function(value1, label1, value2 = NULL, label2 = NULL, y_lab, hline = TRUE, facet = FALSE) {
+get_violin = function(value1, label1, value2 = NULL, label2 = NULL, y_lab, hline = TRUE, facet = FALSE, samps = 80000) {
   df = data.frame(  
     value = c(
       value1
       , value2
     )
     , parameter = c(
-      rep(label1, 80000)  
-      , rep(label2, 80000)  
+      rep(label1, samps)  
+      , rep(label2, samps)  
     )
   )
   
