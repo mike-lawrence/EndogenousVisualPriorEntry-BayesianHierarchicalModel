@@ -28,19 +28,27 @@ parameters{
 	real population_pss_effect_mean ; 
 	real population_pss_initial_bias_effect_mean;
 	real population_pss_initial_bias_interaction_effect_mean;
+	real population_pss_initial_bias_judgement_type_interaction_effect_mean;
+	real population_pss_initial_bias_probe_interaction_effect_mean;
 	real population_pss_judgement_type_effect_mean;
+	real population_pss_judgement_type_interaction_effect_mean;
+	real population_pss_judgement_type_probe_interaction_effect_mean;
 	real population_pss_probe_effect_mean;
 	real population_pss_probe_interaction_effect_mean;
-	real population_pss_judgement_type_interaction_effect_mean;
+	real population_pss_four_way_interaction_effect_mean;
 
 	real population_logjnd_intercept_mean ;
-	real population_logjnd_effect_mean ;
+	real population_logjnd_effect_mean ; 
 	real population_logjnd_initial_bias_effect_mean;
+	real population_logjnd_initial_bias_interaction_effect_mean;
+	real population_logjnd_initial_bias_judgement_type_interaction_effect_mean;
+	real population_logjnd_initial_bias_probe_interaction_effect_mean;
 	real population_logjnd_judgement_type_effect_mean;
+	real population_logjnd_judgement_type_interaction_effect_mean;
+	real population_logjnd_judgement_type_probe_interaction_effect_mean;
 	real population_logjnd_probe_effect_mean;
 	real population_logjnd_probe_interaction_effect_mean;
-	real population_logjnd_judgement_type_interaction_effect_mean;
-	real population_logjnd_initial_bias_interaction_effect_mean;
+	real population_logjnd_four_way_interaction_effect_mean;
 	//population sds
 	real<lower=0,upper=pi()/2> zpopulation_pss_intercept_sd ;
 	real<lower=0,upper=pi()/2> zpopulation_pss_effect_sd ; 
@@ -54,18 +62,27 @@ parameters{
   real logKappaEffectMean;
   // between subject, probe duration effect
   real logitRhoProbeEffectMean;
-  real logKappaProbeEffectMean;
   real logitRhoJudgementTypeEffectMean;
-  real logKappaJudgementTypeEffectMean;
   real logitRhoInitialBiasEffectMean;
+  real logKappaProbeEffectMean;
+  real logKappaJudgementTypeEffectMean;
   real logKappaInitialBiasEffectMean;
   // between vs. within subject interaction terms
   real logitRhoProbeInteractionEffectMean;
-  real logKappaProbeInteractionEffectMean;
   real logitRhoJudgementTypeInteractionEffectMean;
-  real logKappaJudgementTypeInteractionEffectMean;
+  real logitRhoJudgementTypeProbeInteractionEffectMean;
   real logitRhoInitialBiasInteractionEffectMean;
+  real logitRhoInitialBiasJudgementTypeInteractionEffectMean;
+  real logitRhoInitialBiasProbeInteractionEffectMean;
+  real logitRhoFourWayInteractionEffectMean;
+  
+  real logKappaProbeInteractionEffectMean;
+  real logKappaJudgementTypeInteractionEffectMean;
+  real logKappaJudgementTypeProbeInteractionEffectMean;
+  real logKappaInitialBiasJudgementTypeInteractionEffectMean;
+  real logKappaInitialBiasProbeInteractionEffectMean;
   real logKappaInitialBiasInteractionEffectMean;
+  real logKappaFourWayInteractionEffectMean;
   // SDs for population parameters
   real<lower=0,upper=pi()/2> zlogitRhoSD;
   real<lower=0,upper=pi()/2> zlogKappaSD;
@@ -118,20 +135,32 @@ transformed parameters{
 			+ population_pss_judgement_type_effect_mean*condition_judgement_type[this_id]/2 
 			+ population_pss_initial_bias_effect_mean*condition_initial_bias[this_id]/2 
 			+ population_pss_probe_effect_mean*condition_probe[this_id]/2;
+			
 			pss_effect_per_id[this_id] <- ( beta[this_id,2]*population_pss_effect_sd 
 			+ population_pss_effect_mean
-		    + population_pss_probe_interaction_effect_mean*condition_probe[this_id]
-		    + population_pss_judgement_type_interaction_effect_mean*condition_judgement_type[this_id]
-		    + population_pss_initial_bias_interaction_effect_mean*condition_initial_bias[this_id] )/2;
-			logjnd_intercept_per_id[this_id] <- beta[this_id,3]*population_logjnd_intercept_sd + population_logjnd_intercept_mean
+	    + population_pss_probe_interaction_effect_mean*condition_probe[this_id]
+	    + population_pss_judgement_type_interaction_effect_mean*condition_judgement_type[this_id]
+	    + population_pss_initial_bias_interaction_effect_mean*condition_initial_bias[this_id]
+	    + population_pss_initial_bias_probe_interaction_effect_mean*condition_initial_bias[this_id]*condition_probe[this_id]
+	    + population_pss_initial_bias_judgement_type_interaction_effect_mean*condition_initial_bias[this_id]*condition_judgement_type[this_id]
+	    + population_pss_judgement_type_probe_interaction_effect_mean*condition_judgement_type[this_id]*condition_probe[this_id]
+	    + population_pss_four_way_interaction_effect_mean*condition_initial_bias[this_id]*condition_judgement_type[this_id]*condition_probe[this_id] )/2 ;
+		  
+		  logjnd_intercept_per_id[this_id] <- beta[this_id,3]*population_logjnd_intercept_sd + population_logjnd_intercept_mean
 			+ population_logjnd_judgement_type_effect_mean*condition_judgement_type[this_id]/2 
 			+ population_logjnd_initial_bias_effect_mean*condition_initial_bias[this_id]/2
 			+ population_logjnd_probe_effect_mean*condition_probe[this_id]/2;
+			
 			logjnd_effect_per_id[this_id] <- ( beta[this_id,4]*population_logjnd_effect_sd 
 			+ population_logjnd_effect_mean
 			+ population_logjnd_probe_interaction_effect_mean*condition_probe[this_id]
 			+ population_logjnd_judgement_type_interaction_effect_mean*condition_judgement_type[this_id]
-			+ population_logjnd_initial_bias_interaction_effect_mean*condition_initial_bias[this_id] )/2;
+			+ population_logjnd_initial_bias_interaction_effect_mean*condition_initial_bias[this_id]
+			+ population_logjnd_initial_bias_probe_interaction_effect_mean*condition_initial_bias[this_id]*condition_probe[this_id]
+		  + population_logjnd_initial_bias_judgement_type_interaction_effect_mean*condition_initial_bias[this_id]*condition_judgement_type[this_id]
+		  + population_logjnd_judgement_type_probe_interaction_effect_mean*condition_judgement_type[this_id]*condition_probe[this_id]
+		  + population_logjnd_four_way_interaction_effect_mean*condition_initial_bias[this_id]*condition_judgement_type[this_id]*condition_probe[this_id] )/2;
+
 		}
 		for(this_obs in 1:L_toj){
 			trial_pss[this_obs] <- pss_intercept_per_id[id_toj[this_obs]] + pss_effect_per_id[id_toj[this_obs]]*condition_toj[this_obs];  // glove, RIGHT is -1... base, LEFT is +1 
@@ -157,11 +186,19 @@ transformed parameters{
       logitRhoEffect[n] <- logitRhoEffectMean + beta[n,7]*logitRhoEffectSD 
       + condition_probe[n]*logitRhoProbeInteractionEffectMean
       + condition_judgement_type[n]*logitRhoJudgementTypeInteractionEffectMean
-      + condition_initial_bias[n]*logitRhoInitialBiasInteractionEffectMean;
+      + condition_initial_bias[n]*logitRhoInitialBiasInteractionEffectMean
+      + condition_initial_bias[n]*condition_judgement_type[n]*logitRhoInitialBiasJudgementTypeInteractionEffectMean
+      + condition_initial_bias[n]*condition_probe[n]*logitRhoInitialBiasProbeInteractionEffectMean
+      + condition_probe[n]*condition_judgement_type[n]*logitRhoJudgementTypeProbeInteractionEffectMean
+      + condition_judgement_type[n]*condition_probe[n]*condition_initial_bias[n]*logitRhoFourWayInteractionEffectMean;
       logKappaEffect[n] <- logKappaEffectMean + beta[n,8]*logKappaEffectSD 
       + condition_probe[n]*logKappaProbeInteractionEffectMean
       + condition_judgement_type[n]*logKappaJudgementTypeInteractionEffectMean
-      + condition_initial_bias[n]*logKappaInitialBiasInteractionEffectMean;
+      + condition_initial_bias[n]*logKappaInitialBiasInteractionEffectMean
+      + condition_initial_bias[n]*condition_judgement_type[n]*logKappaInitialBiasJudgementTypeInteractionEffectMean
+      + condition_initial_bias[n]*condition_probe[n]*logKappaInitialBiasProbeInteractionEffectMean
+      + condition_probe[n]*condition_judgement_type[n]*logKappaJudgementTypeProbeInteractionEffectMean
+      + condition_judgement_type[n]*condition_probe[n]*condition_initial_bias[n]*logKappaFourWayInteractionEffectMean;
       rho[1,n] <- inv_logit( logitRho[n] - logitRhoEffect[n]/2 ) ;  // unattended is 1, is minus
       rho[2,n] <- inv_logit( logitRho[n] + logitRhoEffect[n]/2 ) ;  // attended is 2, is plus
       kappa[1,n] <- exp( logKappa[n] - logKappaEffect[n]/2  ) ;
@@ -189,6 +226,10 @@ model{
 	population_pss_probe_interaction_effect_mean ~ normal(0,1);
 	population_pss_judgement_type_interaction_effect_mean ~ normal(0,1);
 	population_pss_initial_bias_interaction_effect_mean ~ normal(0,1) ; 
+	population_pss_initial_bias_judgement_type_interaction_effect_mean ~ normal(0,1);
+	population_pss_initial_bias_probe_interaction_effect_mean ~ normal(0,1);
+	population_pss_judgement_type_probe_interaction_effect_mean ~ normal(0,1);
+	population_pss_four_way_interaction_effect_mean ~ normal(0,1);
 	population_logjnd_intercept_mean ~ normal(-1,.5) ;
 	population_logjnd_effect_mean ~ normal(0,1) ;
 	population_logjnd_initial_bias_effect_mean ~ normal(0,1);
@@ -197,6 +238,10 @@ model{
 	population_logjnd_probe_interaction_effect_mean ~ normal(0,1);
 	population_logjnd_judgement_type_interaction_effect_mean ~ normal(0,1);
 	population_logjnd_initial_bias_interaction_effect_mean ~ normal(0,1);
+	population_logjnd_initial_bias_judgement_type_interaction_effect_mean ~ normal(0,1);
+	population_logjnd_initial_bias_probe_interaction_effect_mean ~ normal(0,1);
+	population_logjnd_judgement_type_probe_interaction_effect_mean ~ normal(0,1);
+	population_logjnd_four_way_interaction_effect_mean ~ normal(0,1);
 
 
   //set priors on population parameters
@@ -216,6 +261,14 @@ model{
   logKappaInitialBiasEffectMean ~ normal(0,3);
   logitRhoInitialBiasInteractionEffectMean ~ normal(0,3);
   logKappaInitialBiasInteractionEffectMean ~ normal(0,3);
+  logitRhoInitialBiasProbeInteractionEffectMean ~ normal(0,3);
+  logitRhoInitialBiasJudgementTypeInteractionEffectMean ~ normal(0,3);
+  logitRhoJudgementTypeProbeInteractionEffectMean ~ normal(0,3);
+  logitRhoFourWayInteractionEffectMean ~ normal(0,3);
+  logKappaInitialBiasProbeInteractionEffectMean ~ normal(0,3);
+  logKappaInitialBiasJudgementTypeInteractionEffectMean ~ normal(0,3);
+  logKappaJudgementTypeProbeInteractionEffectMean ~ normal(0,3);
+  logKappaFourWayInteractionEffectMean ~ normal(0,3);
   // logitRhoSD ~ weibull(2,2);#student_t(4,0,2);
   // logKappaSD ~ weibull(2,2);#student_t(4,0,1);
   // logitRhoEffectSD ~ weibull(2,2);#student_t(4,0,1);
