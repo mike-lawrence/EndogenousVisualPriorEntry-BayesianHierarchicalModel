@@ -210,10 +210,17 @@ transformed parameters{
     }
   	// compute trial-level parameters
     for (i in 1:L_color){
-      p[i] <- log_sum_exp(  // Ghis: likelihood 
+      if(kappa[condition_color[i],unit_color[i]]<10){
+        p[i] <- log_sum_exp(  // Ghis: likelihood 
                             logRho[condition_color[i],unit_color[i]] + von_mises_log(y_color[i],pi(),kappa[condition_color[i],unit_color[i]])   
                             , log1mrho_neglog2pi[condition_color[i],unit_color[i]]
-      ) ;
+        ) ;
+      }else{
+        p[i] <- log_sum_exp(  // Ghis: likelihood 
+                            logRho[condition_color[i],unit_color[i]] + normal_log(y_color[i],pi(),1/sqrt(kappa[condition_color[i],unit_color[i]]))   
+                            , log1mrho_neglog2pi[condition_color[i],unit_color[i]]
+        ) ;
+      }
     }
 	}
 }
